@@ -1,0 +1,80 @@
+{
+  "name": "@slice2price/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Calculadora de costos y cotizador para impresión 3D",
+  "author": "Slice2Price Team",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "electron:dev": "concurrently -k \"vite --host\" \"npx wait-on tcp:5173 && electron .\"",
+    "dist:dir": "electron-builder --win --dir",
+    "dist:exe": "electron-builder --win"
+  },
+  "dependencies": {
+    "@slice2price/core": "*",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "concurrently": "^9.1.0",
+    "electron": "33.4.11",
+    "electron-builder": "^26.18.0",
+    "typescript": "^5.5.0",
+    "vite": "^6.0.0",
+    "wait-on": "^8.0.0"
+  },
+  "build": {
+    "appId": "com.slice2price.desktop",
+    "productName": "Slice2Price",
+    "electronVersion": "33.4.11",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "public/**/*",
+      {
+        "from": "../../packages/core/dist",
+        "to": "node_modules/@slice2price/core/dist"
+      },
+      {
+        "from": "../../packages/core/package.json",
+        "to": "node_modules/@slice2price/core/package.json"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "public/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Slice2Price",
+      "installerIcon": "public/icon.ico",
+      "uninstallerIcon": "public/icon.ico"
+    }
+  }
+}

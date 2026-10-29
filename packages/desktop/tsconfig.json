@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "paths": {
+      "@slice2price/core": ["../core/src/index.ts"]
+    },
+    "outDir": "./dist",
+    "noEmit": true
+  },
+  "include": ["src/**/*"]
+}

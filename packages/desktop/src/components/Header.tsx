@@ -1,0 +1,76 @@
+import React from 'react';
+import { useApp } from '../context/AppContext.js';
+
+export const Header: React.FC = () => {
+  const { setActiveTab } = useApp();
+
+  const handleMinimize = () => {
+    (window as any).electronAPI?.minimize();
+  };
+
+  const handleMaximize = () => {
+    (window as any).electronAPI?.maximize();
+  };
+
+  const handleClose = () => {
+    (window as any).electronAPI?.close();
+  };
+
+  const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI?.isElectron;
+
+  return (
+    <header className="app-header">
+      <div className="app-header__left">
+        <img src="./logo.png" alt="Slice2Price Logo" className="app-header__logo" />
+        <span className="app-header__title">Slice2Price</span>
+        <span className="app-header__version">v0.1.0 • Etapa 2</span>
+        <div className="app-header__divider"></div>
+        <div
+          className="badge badge--secondary"
+          style={{ cursor: 'pointer' }}
+          onClick={() => setActiveTab('vigilante')}
+          title="Ver estado de vigilancia de slicers"
+        >
+          <span className="dot dot--secondary dot--pulse"></span>
+          <span>Vigilante Activo</span>
+        </div>
+      </div>
+
+      <div className="app-header__right">
+        <div className="badge badge--surface">
+          <span className="color-primary font-bold">$ COP</span>
+          <span>Peso colombiano</span>
+        </div>
+
+        {isElectron && (
+          <div style={{ display: 'flex', gap: '4px', marginLeft: '8px' }}>
+            <button
+              onClick={handleMinimize}
+              className="btn btn--ghost"
+              style={{ padding: '4px 8px', borderRadius: '4px' }}
+              title="Minimizar"
+            >
+              <span className="material-symbols-outlined icon-xs">remove</span>
+            </button>
+            <button
+              onClick={handleMaximize}
+              className="btn btn--ghost"
+              style={{ padding: '4px 8px', borderRadius: '4px' }}
+              title="Maximizar"
+            >
+              <span className="material-symbols-outlined icon-xs">crop_square</span>
+            </button>
+            <button
+              onClick={handleClose}
+              className="btn btn--ghost"
+              style={{ padding: '4px 8px', borderRadius: '4px', color: 'var(--error)' }}
+              title="Cerrar"
+            >
+              <span className="material-symbols-outlined icon-xs">close</span>
+            </button>
+          </div>
+        )}
+      </div>
+    </header>
+  );
+};
