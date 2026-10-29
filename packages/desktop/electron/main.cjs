@@ -49,6 +49,18 @@ function createWindow() {
     mainWindow.loadFile(indexPath);
   }
 
+  // Atajo de depuración: F12 o Ctrl+Shift+I para DevTools, F5 para recargar
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.key === 'F12' || (input.control && input.shift && input.key.toLowerCase() === 'i')) {
+      mainWindow.webContents.toggleDevTools();
+      event.preventDefault();
+    }
+    if (input.key === 'F5' || (input.control && input.key.toLowerCase() === 'r')) {
+      mainWindow.webContents.reload();
+      event.preventDefault();
+    }
+  });
+
   mainWindow.on('closed', () => {
     mainWindow = null;
     slicerWatcher.setMainWindow(null);
@@ -72,6 +84,14 @@ ipcMain.handle('window-maximize', () => {
 
 ipcMain.handle('window-close', () => {
   if (mainWindow) mainWindow.close();
+});
+
+ipcMain.handle('toggle-devtools', () => {
+  if (mainWindow) {
+    mainWindow.webContents.toggleDevTools();
+    return true;
+  }
+  return false;
 });
 
 ipcMain.handle('get-app-version', () => {

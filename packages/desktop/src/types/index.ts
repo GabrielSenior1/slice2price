@@ -62,6 +62,7 @@ export interface ElectronAPI {
   selectFolder: () => Promise<string | null>;
   selectFile: () => Promise<string | null>;
   parseFilePath: (filePath: string) => Promise<SliceResult | null>;
+  toggleDevTools?: () => Promise<boolean>;
   onSlicerEvent: (callback: (payload: SlicerEventPayload) => void) => () => void;
 }
 

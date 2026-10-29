@@ -45,6 +45,14 @@ export const Header: React.FC = () => {
         {isElectron && (
           <div style={{ display: 'flex', gap: '4px', marginLeft: '8px' }}>
             <button
+              onClick={() => (window as any).electronAPI?.toggleDevTools?.()}
+              className="btn btn--ghost"
+              style={{ padding: '4px 8px', borderRadius: '4px' }}
+              title="Herramientas de depuración (F12)"
+            >
+              <span className="material-symbols-outlined icon-xs">bug_report</span>
+            </button>
+            <button
               onClick={handleMinimize}
               className="btn btn--ghost"
               style={{ padding: '4px 8px', borderRadius: '4px' }}

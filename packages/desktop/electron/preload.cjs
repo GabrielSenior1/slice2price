@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   close: () => ipcRenderer.invoke('window-close'),
   getVersion: () => ipcRenderer.invoke('get-app-version'),
   openExternalUrl: (url) => ipcRenderer.invoke('open-external-url', url),
+  toggleDevTools: () => ipcRenderer.invoke('toggle-devtools'),
 
   // Vigilante de Slicers (Fase 3)
   getDetectedSlicers: () => ipcRenderer.invoke('get-detected-slicers'),
