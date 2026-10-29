@@ -19,7 +19,7 @@ export const Header: React.FC = () => {
   const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI?.isElectron;
 
   return (
-    <header className="app-header">
+    <header className="app-header" onDoubleClick={handleMaximize}>
       <div className="app-header__left">
         <img src="./logo.png" alt="Slice2Price Logo" className="app-header__logo" />
         <span className="app-header__title">Slice2Price</span>

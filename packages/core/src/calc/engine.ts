@@ -25,6 +25,9 @@ export interface CalcParams {
   errorMargin: number;           // %
   failureRisk: number;           // %
 
+  // Dificultad y geometría de impresión (opcional, default: 0%)
+  difficultyPercent?: number;    // % de recargo por dificultad/soportes/geometría
+
   // Cliente / Tarifa
   profitMargin: number;          // %
   discount: number;              // %
@@ -76,9 +79,17 @@ export interface CostBreakdown {
   /** subtotal × (1 + error%) × (1 + riesgo%) */
   subtotalWithRisk: number;
 
-  // ── Ganancia ─────────────────────────────────────────────────────────────
+  // ── Dificultad / Geometría ───────────────────────────────────────────────
+  /** Porcentaje de recargo por dificultad geométrica/técnica */
+  difficultyPercent: number;
+  /** Monto que agrega la dificultad geométrica */
+  difficultyAmount: number;
+
+  // ── Ganancia y Multiplicador ─────────────────────────────────────────────
   /** Porcentaje de margen de ganancia aplicado */
   profitMarginPercent: number;
+  /** Multiplicador comercial equivalente (ej. 2.0 = x2, 2.5 = x2.5) */
+  profitMultiplier: number;
   /** Monto que agrega la ganancia */
   profitAmount: number;
 
@@ -149,12 +160,17 @@ export function calculateCost(params: CalcParams, piece: PieceInput): CostBreakd
   const depreciationCost = piece.printTimeHours * params.depreciationPerHour;
   const extraCosts = piece.extraCosts;
 
-  // ── Subtotal ─────────────────────────────────────────────────────────────
+  // ── Subtotal base ────────────────────────────────────────────────────────
   const subtotal = filamentCost + energyCost + depreciationCost + extraCosts;
 
+  // ── Dificultad y geometría de la pieza ───────────────────────────────────
+  const difficultyPercent = Math.max(0, params.difficultyPercent ?? 0);
+  const difficultyAmount = subtotal * (difficultyPercent / 100);
+  const subtotalWithDifficulty = subtotal + difficultyAmount;
+
   // ── Margen de error ──────────────────────────────────────────────────────
-  const afterError = subtotal * (1 + params.errorMargin / 100);
-  const errorMarginAmount = afterError - subtotal;
+  const afterError = subtotalWithDifficulty * (1 + params.errorMargin / 100);
+  const errorMarginAmount = afterError - subtotalWithDifficulty;
 
   // ── Riesgo de fallo ──────────────────────────────────────────────────────
   const afterRisk = afterError * (1 + params.failureRisk / 100);
@@ -175,18 +191,24 @@ export function calculateCost(params: CalcParams, piece: PieceInput): CostBreakd
   // ── Total ────────────────────────────────────────────────────────────────
   const totalAllUnits = totalPerUnit * piece.quantity;
 
+  // Multiplicador comercial equivalente (ej. x2, x2.5, x3)
+  const profitMultiplier = Math.round((1 + params.profitMargin / 100) * 100) / 100;
+
   return {
     filamentCost,
     energyCost,
     depreciationCost,
     extraCosts,
     subtotal,
+    difficultyPercent,
+    difficultyAmount,
     errorMarginPercent: params.errorMargin,
     errorMarginAmount,
     failureRiskPercent: params.failureRisk,
     failureRiskAmount,
     subtotalWithRisk,
     profitMarginPercent: params.profitMargin,
+    profitMultiplier,
     profitAmount,
     priceBeforeDiscount,
     discountPercent: params.discount,

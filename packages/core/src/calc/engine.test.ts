@@ -330,4 +330,37 @@ describe('paramsFromProfiles', () => {
     expect(params.profitMargin).toBe(60);
     expect(params.discount).toBe(5);
   });
+
+  describe('Dificultad de impresión y multiplicadores comerciales', () => {
+    it('aplica recargo por dificultad geométrica correctamente', () => {
+      const resStandard = calculateCost({ ...baseParams, difficultyPercent: 0 }, basePiece);
+      const resComplex = calculateCost({ ...baseParams, difficultyPercent: 20 }, basePiece);
+
+      expect(resStandard.difficultyPercent).toBe(0);
+      expect(resStandard.difficultyAmount).toBe(0);
+
+      // Subtotal base es 11.114. Un 20% de dificultad es 2.222,80
+      expect(resComplex.difficultyPercent).toBe(20);
+      expect(resComplex.difficultyAmount).toBeCloseTo(11114 * 0.20, 2);
+      expect(resComplex.totalAllUnits).toBeGreaterThan(resStandard.totalAllUnits);
+    });
+
+    it('calcula multiplicador comercial equivalente', () => {
+      // 100% de margen = x2
+      const resX2 = calculateCost({ ...baseParams, profitMargin: 100 }, basePiece);
+      expect(resX2.profitMultiplier).toBe(2.0);
+
+      // 150% de margen = x2.5
+      const resX25 = calculateCost({ ...baseParams, profitMargin: 150 }, basePiece);
+      expect(resX25.profitMultiplier).toBe(2.5);
+
+      // 200% de margen = x3
+      const resX3 = calculateCost({ ...baseParams, profitMargin: 200 }, basePiece);
+      expect(resX3.profitMultiplier).toBe(3.0);
+
+      // 250% de margen = x3.5
+      const resX35 = calculateCost({ ...baseParams, profitMargin: 250 }, basePiece);
+      expect(resX35.profitMultiplier).toBe(3.5);
+    });
+  });
 });
