@@ -684,7 +684,20 @@ _Cotización generada con Slice2Price_`;
 
             {/* Tarifa Eléctrica $/kWh */}
             <div className="input-group">
-              <label className="input-group__label text-label-caption">Costo Electricidad ($/kWh)</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label className="input-group__label text-label-caption">Costo Electricidad ($/kWh en Colombia)</label>
+                {pricePerKwh !== selectedGeneral.pricePerKwh && (
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--sm"
+                    style={{ padding: '0 4px', fontSize: '11px', height: 'auto' }}
+                    onClick={() => setPricePerKwh(selectedGeneral.pricePerKwh)}
+                    title="Restablecer a tarifa del perfil"
+                  >
+                    ↺ Perfil (${selectedGeneral.pricePerKwh}/kWh)
+                  </button>
+                )}
+              </div>
               <div className="input-wrap">
                 <span className="input-wrap__prefix">$</span>
                 <input
@@ -699,10 +712,37 @@ _Cotización generada con Slice2Price_`;
             </div>
           </div>
 
-          {/* Chips de potencias típicas */}
+          {/* Chips de tarifas de electricidad en Colombia (CREG) */}
           <div style={{ marginTop: '8px' }}>
             <span className="text-label-caption color-outline" style={{ display: 'block', marginBottom: '4px', fontSize: '11px' }}>
-              Potencia típica según tipo de máquina y calentamiento de cama:
+              Tarifas reales de electricidad en Colombia (según estrato o tipo de taller):
+            </span>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {[
+                { label: '$600 Estrato 1-2', price: 600 },
+                { label: '$750 Estrato 3', price: 750 },
+                { label: '$880 Estrato 4 / Base', price: 880 },
+                { label: '$980 Comercial / Taller', price: 980 },
+                { label: '$1.080 Estrato 5-6', price: 1080 },
+                { label: '$1.200 Costa Caribe', price: 1200 },
+              ].map((chip) => (
+                <button
+                  key={chip.price}
+                  type="button"
+                  className={`badge ${pricePerKwh === chip.price ? 'badge--primary' : 'badge--surface'}`}
+                  style={{ cursor: 'pointer', border: 'none', padding: '4px 8px' }}
+                  onClick={() => setPricePerKwh(chip.price)}
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Chips de potencias típicas */}
+          <div style={{ marginTop: '10px' }}>
+            <span className="text-label-caption color-outline" style={{ display: 'block', marginBottom: '4px', fontSize: '11px' }}>
+              Potencia típica según máquina y calentamiento de cama:
             </span>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {[

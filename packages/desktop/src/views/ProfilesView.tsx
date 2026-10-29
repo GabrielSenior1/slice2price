@@ -373,8 +373,28 @@ export const ProfilesView: React.FC = () => {
                 />
                 <span className="input-wrap__suffix">COP/kWh</span>
               </div>
-              <span className="text-body-sm color-outline" style={{ fontSize: '11px' }}>
-                Promedio Colombia: Bogotá ~800, Medellín ~780, Cali ~850 COP/kWh
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
+                {[
+                  { label: '$600 Estrato 1-2', price: 600 },
+                  { label: '$750 Estrato 3', price: 750 },
+                  { label: '$880 Estrato 4 / Base', price: 880 },
+                  { label: '$980 Comercial / Taller', price: 980 },
+                  { label: '$1.080 Estrato 5-6', price: 1080 },
+                  { label: '$1.200 Costa Caribe', price: 1200 },
+                ].map((chip) => (
+                  <button
+                    key={chip.price}
+                    type="button"
+                    className={`badge ${gPriceKwh === chip.price ? 'badge--primary' : 'badge--surface'}`}
+                    style={{ cursor: 'pointer', border: 'none', padding: '3px 6px', fontSize: '10px' }}
+                    onClick={() => setGPriceKwh(chip.price)}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
+              <span className="text-body-sm color-outline" style={{ fontSize: '11px', marginTop: '4px' }}>
+                Regulado CREG Colombia: Estrato 1-2 ($550-$650), Estrato 3 ($750), Estrato 4 base ($880), Comercial/Taller con sobretasa 20% ($980), Costa Caribe ($1.200).
               </span>
             </div>
 
