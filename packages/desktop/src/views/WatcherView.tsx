@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext.js';
 import type { SlicerDetectedInfo } from '../types/index.js';
 
 export const WatcherView: React.FC = () => {
-  const { setActiveTab, showToast, setLoadedQuote } = useApp();
+  const { setActiveTab, showToast, setLoadedQuote, toggleCompactMode } = useApp();
   const [watcherEnabled, setWatcherEnabled] = useState(true);
   const [slicers, setSlicers] = useState<SlicerDetectedInfo[]>([]);
   const [customPaths, setCustomPaths] = useState<string[]>([]);
@@ -146,7 +146,16 @@ export const WatcherView: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            className="btn btn--secondary btn--sm"
+            onClick={() => toggleCompactMode(true)}
+            title="Activar Mini Overlay Flotante Always-on-top mientras laminas (F10)"
+          >
+            <span className="material-symbols-outlined icon-sm">picture_in_picture_alt</span>
+            Modo Flotante
+          </button>
+
           <button
             className="btn btn--secondary btn--sm"
             onClick={handleSelectFile}

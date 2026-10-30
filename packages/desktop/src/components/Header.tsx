@@ -2,7 +2,7 @@ import React from 'react';
 import { useApp } from '../context/AppContext.js';
 
 export const Header: React.FC = () => {
-  const { setActiveTab } = useApp();
+  const { setActiveTab, toggleCompactMode } = useApp();
 
   const handleMinimize = () => {
     (window as any).electronAPI?.minimize();
@@ -23,7 +23,7 @@ export const Header: React.FC = () => {
       <div className="app-header__left">
         <img src="./logo.png" alt="Slice2Price Logo" className="app-header__logo" />
         <span className="app-header__title">Slice2Price</span>
-        <span className="app-header__version">v0.1.0 • Etapa 2</span>
+        <span className="app-header__version">v0.1.0 • Etapa 4</span>
         <div className="app-header__divider"></div>
         <div
           className="badge badge--secondary"
@@ -37,6 +37,18 @@ export const Header: React.FC = () => {
       </div>
 
       <div className="app-header__right">
+        {isElectron && (
+          <button
+            onClick={() => toggleCompactMode(true)}
+            className="btn btn--secondary btn--sm"
+            style={{ padding: '4px 10px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '5px' }}
+            title="Activar Modo Mini Overlay Flotante (Siempre visible mientras laminas, F10)"
+          >
+            <span className="material-symbols-outlined icon-xs">picture_in_picture_alt</span>
+            <span style={{ fontSize: '11px', fontWeight: 600 }}>Modo Flotante</span>
+          </button>
+        )}
+
         <div className="badge badge--surface">
           <span className="color-primary font-bold">$ COP</span>
           <span>Peso colombiano</span>

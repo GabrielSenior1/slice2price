@@ -16,8 +16,23 @@ async function getCore() {
 function getAvailableSlicers() {
   const appData = process.env.APPDATA || '';
   const userProfile = process.env.USERPROFILE || '';
+  const tempDir = process.env.TEMP || process.env.TMP || '';
+  const bridgeFolder = path.join(tempDir, 'Slice2Price');
+
+  try {
+    if (!fs.existsSync(bridgeFolder)) {
+      fs.mkdirSync(bridgeFolder, { recursive: true });
+    }
+  } catch (e) {}
 
   const candidates = [
+    {
+      id: 'bridge',
+      name: 'Puente Plugins Slice2Price',
+      icon: 'sync_alt',
+      path: bridgeFolder,
+      description: 'Carpeta puente rápida para plugins y scripts post-procesado',
+    },
     {
       id: 'orcaslicer',
       name: 'OrcaSlicer',

@@ -28,6 +28,7 @@ export const LiveQuoter: React.FC = () => {
     showToast,
     loadedQuote,
     setLoadedQuote,
+    toggleCompactMode,
   } = useApp();
 
   // Inputs de la pieza
@@ -352,14 +353,25 @@ _Cotización generada con Slice2Price_`;
               </div>
             </div>
           </div>
-          <button
-            type="button"
-            className="btn btn--secondary btn--sm"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <span className="material-symbols-outlined icon-xs">folder_open</span>
-            Examinar
-          </button>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button
+              type="button"
+              className="btn btn--secondary btn--sm"
+              onClick={() => toggleCompactMode(true)}
+              title="Minimizar a widget flotante always-on-top sobre tu slicer (F10)"
+            >
+              <span className="material-symbols-outlined icon-xs">picture_in_picture_alt</span>
+              Modo Flotante
+            </button>
+            <button
+              type="button"
+              className="btn btn--secondary btn--sm"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <span className="material-symbols-outlined icon-xs">folder_open</span>
+              Examinar
+            </button>
+          </div>
           <input
             ref={fileInputRef}
             type="file"

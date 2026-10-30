@@ -12,22 +12,24 @@ Calculadora de costos para piezas de impresión 3D. Calcula automáticamente el 
 ```
 Slice2Price/
 ├── packages/
-│   ├── core/         ← Núcleo: fórmulas, perfiles, parsers (etapa actual)
-│   └── desktop/      ← App de escritorio: Electron + React + Vite (etapa 2)
+│   ├── core/           ← Núcleo: fórmulas, perfiles, parsers (Etapa 1)
+│   └── desktop/        ← App de escritorio: Electron + React + Vite + Mini Overlay (Etapas 2 y 4)
 ├── plugins/
-│   └── cura/         ← Plugin de Cura en Python (etapa 4)
-└── data/             ← Datos del usuario (JSON)
+│   ├── cura/           ← Plugin para UltiMaker Cura en Python (Etapa 4)
+│   ├── prusa/          ← Script de post-procesamiento para PrusaSlicer (Etapa 4)
+│   └── orca_bambu/     ← Script de post-procesamiento para OrcaSlicer y Bambu Studio (Etapa 4)
+└── data/               ← Datos del usuario y copias de seguridad (JSON)
 ```
 
-## Etapa 1 — Núcleo (`packages/core`)
+## Etapas del Desarrollo
 
-El paquete `@slice2price/core` contiene:
-
-- **Motor de cálculo** (`calc/engine.ts`) — Implementa las fórmulas de costo con desglose completo.
-- **Perfiles** (`profiles/`) — CRUD para 4 tipos: Impresora, Material, Cliente, General.
-- **Defaults** (`profiles/defaults.ts`) — Lista inicial de impresoras, materiales y tarifas.
-- **Formateo** (`format/currency.ts`) — Formateo a pesos colombianos ($12.500).
-- **Parsers** (`parsers/types.ts`) — Interfaz para parsers de slicer (implementación en etapa 3).
+- **✅ Etapa 1 — Núcleo (`@slice2price/core`):** Motor de cálculo con fórmulas exactas en pesos colombianos (COP), CRUD de perfiles (impresoras, materiales, clientes, tarifas CREG), formateo y suite de 69 tests unitarios.
+- **✅ Etapa 2 — App de Escritorio (`@slice2price/desktop`):** Interfaz completa con Electron 33 + React 18 + Vite 6 + TypeScript. Cotizador en tiempo real con chips de estratos de energía, gestión visual de perfiles, historial y exportación (PDF/Texto/Portapapeles).
+- **✅ Etapa 3 — Vigilante de Slicers en Tiempo Real:** Monitoreo en segundo plano de carpetas de laminadores en Windows (%APPDATA% de Orca, Bambu, Cura, Prusa, Creality, Descargas y Escritorio). Parsers automáticos de G-code y .3MF.
+- **🚀 Etapa 4 — Plugins y Mini Overlay Flotante:**
+  - **Mini Overlay Flotante Always-on-Top:** Widget compacto que permanece siempre en primer plano sobre tu slicer, mostrando precio en tiempo real con atajo **F10** o botón en cabecera.
+  - **Notificaciones nativas:** Alertas visuales del sistema en Windows al detectar un archivo laminado.
+  - **Plugins dedicados:** Integración directa para Cura (`plugins/cura/`), PrusaSlicer (`plugins/prusa/`) y OrcaSlicer/Bambu Studio (`plugins/orca_bambu/`).
 
 ### Fórmulas
 

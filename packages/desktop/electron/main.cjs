@@ -6,6 +6,8 @@ const { SlicerWatcher, getAvailableSlicers } = require('./watcher.cjs');
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
 let mainWindow = null;
+let isCompactMode = false;
+let normalBounds = { width: 1280, height: 820 };
 const slicerWatcher = new SlicerWatcher();
 
 function createWindow() {
@@ -49,7 +51,7 @@ function createWindow() {
     mainWindow.loadFile(indexPath);
   }
 
-  // Atajo de depuración: F12 o Ctrl+Shift+I para DevTools, F5 para recargar
+  // Atajo de depuración: F12 o Ctrl+Shift+I para DevTools, F5 para recargar, F10 para alternar mini-overlay
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.key === 'F12' || (input.control && input.shift && input.key.toLowerCase() === 'i')) {
       mainWindow.webContents.toggleDevTools();
@@ -59,12 +61,39 @@ function createWindow() {
       mainWindow.webContents.reload();
       event.preventDefault();
     }
+    if (input.key === 'F10') {
+      toggleCompactMode();
+      event.preventDefault();
+    }
   });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
     slicerWatcher.setMainWindow(null);
   });
+}
+
+function toggleCompactMode(forceState) {
+  if (!mainWindow) return false;
+  const nextState = forceState !== undefined ? !!forceState : !isCompactMode;
+
+  if (nextState && !isCompactMode) {
+    normalBounds = mainWindow.getBounds();
+    mainWindow.setMinimumSize(320, 180);
+    mainWindow.setSize(380, 260);
+    mainWindow.setAlwaysOnTop(true, 'screen-saver');
+    isCompactMode = true;
+  } else if (!nextState && isCompactMode) {
+    mainWindow.setAlwaysOnTop(false);
+    mainWindow.setMinimumSize(980, 650);
+    mainWindow.setBounds(normalBounds);
+    isCompactMode = false;
+  }
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('compact-mode-changed', isCompactMode);
+  }
+  return isCompactMode;
 }
 
 // IPC Handlers — Control de ventana
@@ -84,6 +113,14 @@ ipcMain.handle('window-maximize', () => {
 
 ipcMain.handle('window-close', () => {
   if (mainWindow) mainWindow.close();
+});
+
+ipcMain.handle('toggle-compact-mode', (event, forceState) => {
+  return toggleCompactMode(forceState);
+});
+
+ipcMain.handle('is-compact-mode', () => {
+  return isCompactMode;
 });
 
 ipcMain.handle('toggle-devtools', () => {

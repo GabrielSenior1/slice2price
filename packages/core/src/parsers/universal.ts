@@ -20,6 +20,24 @@ export const KNOWN_PARSERS: SlicerParser[] = [
 export function parseSlicerFile(content: string, filename?: string): SliceResult | null {
   if (!content || typeof content !== 'string') return null;
 
+  // 0. Si contiene metadatos directos generados por plugins/scripts Slice2Price
+  const jsonMatch = content.match(/;Slice2Price_JSON:\s*(\{.+?\})/);
+  if (jsonMatch && jsonMatch[1]) {
+    try {
+      const data = JSON.parse(jsonMatch[1]);
+      if (typeof data.printTimeHours === 'number' || typeof data.filamentGrams === 'number') {
+        return {
+          printTimeHours: Number(data.printTimeHours) || 0,
+          filamentGrams: Number(data.filamentGrams) || 0,
+          slicerName: data.slicerName || 'Plugin Slice2Price',
+          sourceFile: data.pieceName || filename,
+        };
+      }
+    } catch {
+      // Ignorar error y continuar con parsers convencionales
+    }
+  }
+
   // 1. Probar parser específico coincidente con canParse
   for (const parser of KNOWN_PARSERS) {
     if (parser.canParse(content)) {

@@ -21,6 +21,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   selectFile: () => ipcRenderer.invoke('select-file'),
   parseFilePath: (filePath) => ipcRenderer.invoke('parse-file-path', filePath),
 
+  // Modo Mini Overlay Flotante (Etapa 4)
+  toggleCompactMode: (forceState) => ipcRenderer.invoke('toggle-compact-mode', forceState),
+  isCompactMode: () => ipcRenderer.invoke('is-compact-mode'),
+  onCompactModeChanged: (callback) => {
+    const handler = (_event, state) => callback(state);
+    ipcRenderer.on('compact-mode-changed', handler);
+    return () => ipcRenderer.removeListener('compact-mode-changed', handler);
+  },
+
   // Suscripción al evento de laminado en tiempo real
   onSlicerEvent: (callback) => {
     const handler = (_event, data) => callback(data);

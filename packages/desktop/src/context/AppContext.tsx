@@ -50,6 +50,10 @@ interface AppContextValue {
   resetToDefaults: () => void;
   importBackupData: (jsonStr: string) => boolean;
 
+  // Modo Mini Overlay Flotante (Etapa 4)
+  isCompactMode: boolean;
+  toggleCompactMode: (forceState?: boolean) => Promise<boolean>;
+
   // Historial de cotizaciones
   savedQuotes: SavedQuote[];
   saveQuote: (quote: Omit<SavedQuote, 'id' | 'timestamp'>) => void;
@@ -75,6 +79,30 @@ const STORAGE_HISTORY_KEY = 'slice2price_history_v1';
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('cotizador');
   const [loadedQuote, setLoadedQuote] = useState<SavedQuote | null>(null);
+  const [isCompactMode, setIsCompactMode] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (window.electronAPI?.isCompactMode) {
+      window.electronAPI.isCompactMode().then((compact) => setIsCompactMode(!!compact));
+    }
+    if (window.electronAPI?.onCompactModeChanged) {
+      const unsub = window.electronAPI.onCompactModeChanged((state) => {
+        setIsCompactMode(state);
+      });
+      return unsub;
+    }
+  }, []);
+
+  const toggleCompactMode = async (forceState?: boolean) => {
+    if (window.electronAPI?.toggleCompactMode) {
+      const next = await window.electronAPI.toggleCompactMode(forceState);
+      setIsCompactMode(next);
+      return next;
+    }
+    const next = forceState !== undefined ? forceState : !isCompactMode;
+    setIsCompactMode(next);
+    return next;
+  };
 
   // Inicializar managers de perfiles
   const [managers] = useState(() => {
@@ -362,6 +390,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         clearHistory,
         loadedQuote,
         setLoadedQuote,
+        isCompactMode,
+        toggleCompactMode,
         toast,
         toastMessage: toast?.message || null,
         showToast,

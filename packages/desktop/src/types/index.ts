@@ -63,6 +63,9 @@ export interface ElectronAPI {
   selectFile: () => Promise<string | null>;
   parseFilePath: (filePath: string) => Promise<SliceResult | null>;
   toggleDevTools?: () => Promise<boolean>;
+  toggleCompactMode: (forceState?: boolean) => Promise<boolean>;
+  isCompactMode: () => Promise<boolean>;
+  onCompactModeChanged: (callback: (isCompact: boolean) => void) => () => void;
   onSlicerEvent: (callback: (payload: SlicerEventPayload) => void) => () => void;
 }
 

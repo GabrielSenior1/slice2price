@@ -1242,3 +1242,202 @@ input[type="range"].slider--error::-webkit-slider-thumb {
   }
 }
 
+/* ============================================================================
+ * Modo Mini Overlay Flotante (Etapa 4)
+ * ============================================================================ */
+.mini-overlay-container {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(18, 20, 24, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--primary-container);
+  border-radius: var(--radius-md);
+  box-sizing: border-box;
+  overflow: hidden;
+  user-select: none;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.mini-overlay-container--pulse {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 20px rgba(0, 210, 106, 0.45);
+}
+
+.mini-overlay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 38px;
+  padding: 0 8px 0 12px;
+  background: var(--surface-variant);
+  border-bottom: 1px solid var(--outline-variant);
+  -webkit-app-region: drag;
+}
+
+.mini-overlay-header__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mini-overlay-logo {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  -webkit-app-region: no-drag;
+}
+
+.mini-overlay-brand {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--on-surface);
+  letter-spacing: -0.2px;
+}
+
+.mini-overlay-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+}
+
+.mini-overlay-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  -webkit-app-region: no-drag;
+}
+
+.mini-overlay-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--on-surface-variant);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mini-overlay-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--on-surface);
+}
+
+.mini-overlay-btn--close:hover {
+  background: #e81123 !important;
+  color: #ffffff !important;
+}
+
+.mini-overlay-body {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 14px;
+  gap: 8px;
+  flex: 1;
+  justify-content: space-between;
+}
+
+.mini-overlay-piece {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.mini-overlay-piece-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--on-surface);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.mini-overlay-slicer-tag {
+  font-size: 10px;
+  padding: 1px 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.mini-overlay-price-box {
+  background: linear-gradient(135deg, rgba(0, 210, 106, 0.08), rgba(18, 20, 24, 0.6));
+  border: 1px solid rgba(0, 210, 106, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  text-align: center;
+}
+
+.mini-overlay-price-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: var(--primary);
+  margin-bottom: 2px;
+}
+
+.mini-overlay-price-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+  font-family: var(--font-mono);
+  line-height: 1.1;
+}
+
+.mini-overlay-price-sub {
+  font-size: 10px;
+  color: var(--on-surface-variant);
+  margin-top: 3px;
+}
+
+.mini-overlay-metrics {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: space-between;
+}
+
+.mini-overlay-metric-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface-variant);
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--on-surface);
+  border: 1px solid var(--outline-variant);
+}
+
+.mini-overlay-metric-pill--hardware {
+  max-width: 130px;
+  overflow: hidden;
+}
+
+.mini-overlay-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.mini-overlay-action-btn {
+  flex: 1;
+  padding: 5px 8px;
+  font-size: 11px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+

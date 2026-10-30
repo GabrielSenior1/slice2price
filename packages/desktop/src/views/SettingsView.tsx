@@ -168,9 +168,9 @@ export const SettingsView: React.FC = () => {
           <div><strong>Etapas del desarrollo:</strong></div>
           <ul style={{ paddingLeft: '20px', margin: '4px 0', lineHeight: '22px' }}>
             <li>✅ <strong>Etapa 1:</strong> Motor de cálculo, perfiles predeterminados y pruebas unitarias (Completada).</li>
-            <li>🚀 <strong>Etapa 2:</strong> Interfaz de escritorio, cotizador interactivo y sistema de perfiles (Activa).</li>
-            <li>⏳ <strong>Etapa 3:</strong> Vigilante de archivos en segundo plano para OrcaSlicer, BambuStudio y Cura.</li>
-            <li>⏳ <strong>Etapa 4:</strong> Notificaciones del sistema y overlay flotante.</li>
+            <li>✅ <strong>Etapa 2:</strong> Interfaz de escritorio, cotizador interactivo y sistema de perfiles (Completada).</li>
+            <li>✅ <strong>Etapa 3:</strong> Vigilante de archivos en segundo plano y parsers para Orca, Bambu, Cura, Prusa (Completada).</li>
+            <li>🚀 <strong>Etapa 4:</strong> Notificaciones del sistema, plugins para Slicers y Mini Overlay Flotante Always-on-top (Completada).</li>
           </ul>
         </div>
       </div>

@@ -141,6 +141,15 @@ G1 X10 Y10
       expect(res?.filamentGrams).toBe(25.0);
     });
 
+    it('debe parsear metadatos directos generados por plugins/scripts Slice2Price', () => {
+      const pluginOutput = `;Slice2Price_JSON: {"slicerName":"OrcaSlicer Script","pieceName":"Engranaje","printTimeHours":2.5,"filamentGrams":45.2}`;
+      const res = parseSlicerFile(pluginOutput);
+      expect(res?.slicerName).toBe('OrcaSlicer Script');
+      expect(res?.sourceFile).toBe('Engranaje');
+      expect(res?.printTimeHours).toBe(2.5);
+      expect(res?.filamentGrams).toBe(45.2);
+    });
+
     it('debe retornar null para contenido sin información relevante', () => {
       const empty = `G28\nG1 Z10\nM104 S0\nM140 S0`;
       expect(parseSlicerFile(empty)).toBeNull();

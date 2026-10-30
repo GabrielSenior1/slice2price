@@ -4,6 +4,7 @@ import { Header } from './components/Header.js';
 import { Sidebar } from './components/Sidebar.js';
 import { Footer } from './components/Footer.js';
 import { Toast } from './components/Toast.js';
+import { MiniOverlay } from './components/MiniOverlay.js';
 import { LiveQuoter } from './views/LiveQuoter.js';
 import { ProfilesView } from './views/ProfilesView.js';
 import { HistoryView } from './views/HistoryView.js';
@@ -24,16 +25,33 @@ const MainContent: React.FC = () => {
   );
 };
 
+const AppShell: React.FC = () => {
+  const { isCompactMode } = useApp();
+
+  if (isCompactMode) {
+    return (
+      <>
+        <MiniOverlay />
+        <Toast />
+      </>
+    );
+  }
+
+  return (
+    <div className="app-layout">
+      <Header />
+      <Sidebar />
+      <MainContent />
+      <Footer />
+      <Toast />
+    </div>
+  );
+};
+
 export const App: React.FC = () => {
   return (
     <AppProvider>
-      <div className="app-layout">
-        <Header />
-        <Sidebar />
-        <MainContent />
-        <Footer />
-        <Toast />
-      </div>
+      <AppShell />
     </AppProvider>
   );
 };
