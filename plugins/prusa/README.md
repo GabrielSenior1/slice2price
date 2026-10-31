@@ -21,3 +21,4 @@ Este script transmite automáticamente los datos de tiempo de impresión y peso 
    *(Nota: Recuerda incluir el punto y coma final `;` si agregas más de un script).*
 6. Guarda el perfil de impresión.
 7. ¡Listo! Cada vez que presiones **Exportar G-code**, Slice2Price detectará el archivo de inmediato y actualizará la cotización.
+

@@ -22,3 +22,4 @@ Este script transmite automáticamente los datos de tiempo de impresión y peso 
    *(Nota: Recuerda incluir las comillas dobles y el punto y coma final `;`).*
 7. Guarda el preset.
 8. ¡Listo! Cada vez que exportes tu G-Code, Slice2Price lo detectará al instante y actualizará el precio automáticamente en el Cotizador y en el Mini Overlay Flotante.
+
