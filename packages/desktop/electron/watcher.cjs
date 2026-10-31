@@ -243,7 +243,17 @@ class SlicerWatcher {
         this.processedFiles.delete(oldest);
       }
 
-      const content = this.readFileHeaderAndFooter(filePath);
+      let content;
+      if (ext === '.3mf') {
+        // Para .3mf: leer el archivo completo como Buffer binario intacto (Falla E3b)
+        try {
+          content = fs.readFileSync(filePath);
+        } catch (e) {
+          return;
+        }
+      } else {
+        content = this.readFileHeaderAndFooter(filePath);
+      }
       if (!content) return;
 
       const { parseSlicerFile } = await getCore();

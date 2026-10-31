@@ -212,7 +212,13 @@ ipcMain.handle('set-active-material-density', (event, density) => {
 
 ipcMain.handle('parse-file-path', async (event, filePath, options) => {
   if (!filePath || !fs.existsSync(filePath)) return null;
-  const content = slicerWatcher.readFileHeader(filePath);
+  const ext = path.extname(filePath).toLowerCase();
+  let content = null;
+  try {
+    content = ext === '.3mf' ? fs.readFileSync(filePath) : slicerWatcher.readFileHeader(filePath);
+  } catch (err) {
+    return null;
+  }
   if (!content) return null;
 
   try {

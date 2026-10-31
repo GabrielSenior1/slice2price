@@ -94,9 +94,11 @@ export const LiveQuoter: React.FC = () => {
     setFailureRisk(selectedGeneral.failureRisk);
   }, [selectedGeneral.id, selectedGeneral.errorMargin, selectedGeneral.failureRisk]);
 
-  // Si se seleccionó una cotización desde el historial, cargarla
+  // Si se seleccionó una cotización desde el historial o evento automático, cargarla
+  const isApplyingExternalQuote = useRef(false);
   useEffect(() => {
     if (loadedQuote) {
+      isApplyingExternalQuote.current = true;
       setPieceName(loadedQuote.pieceName);
       const totalH = loadedQuote.printTimeHours;
       const h = Math.floor(totalH);
@@ -124,11 +126,16 @@ export const LiveQuoter: React.FC = () => {
     }
   }, [loadedQuote]);
 
-  // Rastrear si el usuario ha modificado campos para proteger el trabajo activo (Falla E7)
+  // Rastrear si el usuario ha modificado campos manualmente para proteger el trabajo activo (Falla E7)
   const hasMountedRef = useRef(false);
   useEffect(() => {
     if (!hasMountedRef.current) {
       hasMountedRef.current = true;
+      return;
+    }
+    if (isApplyingExternalQuote.current) {
+      isApplyingExternalQuote.current = false;
+      setHasUnsavedWork(false);
       return;
     }
     setHasUnsavedWork(true);
@@ -224,8 +231,8 @@ export const LiveQuoter: React.FC = () => {
     setActivePieceName(pieceName);
   }, [breakdown, pieceName, setActiveBreakdown, setActivePieceName]);
 
-  // Parser interactivo para G-code y texto de slicers (Fase 3 y E5b con densidad de material)
-  const processSlicerContent = (content: string, filename: string) => {
+  // Parser interactivo para G-code y archivos .3MF (Fases 3 y 4 con densidad de material y bytes reales)
+  const processSlicerContent = (content: string | Uint8Array, filename: string) => {
     const result = parseSlicerFile(content, filename, {
       density: selectedMaterial?.density ?? 1.24,
     });
@@ -240,7 +247,7 @@ export const LiveQuoter: React.FC = () => {
       showToast(`¡Parámetros leídos de ${result.slicerName}!`);
     } else {
       if (filename.toLowerCase().endsWith('.3mf')) {
-        showToast('Los archivos .3MF son paquetes ZIP binarios de proyecto. Para cotización automática precisa, exporta como .GCODE desde tu laminador.', 'warning');
+        showToast('El archivo .3MF no contiene metadatos de laminación (es un modelo 3D sin procesar). Láminalo en tu slicer o exporta como .GCODE.', 'warning');
       } else {
         showToast('Archivo leído, pero no se hallaron etiquetas estándar de tiempo/peso.');
       }
@@ -277,10 +284,26 @@ export const LiveQuoter: React.FC = () => {
     }
   };
 
+  const handleProcessUploadedFile = (file: File) => {
+    if (file.name.toLowerCase().endsWith('.3mf')) {
+      // Para .3mf: leer los bytes binarios puros como ArrayBuffer para no corromper el ZIP (Falla E3b)
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const buffer = e.target?.result as ArrayBuffer;
+        if (buffer) {
+          processSlicerContent(new Uint8Array(buffer), file.name);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      readFileSmart(file, (text) => processSlicerContent(text, file.name));
+    }
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    readFileSmart(file, (text) => processSlicerContent(text, file.name));
+    handleProcessUploadedFile(file);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -288,7 +311,7 @@ export const LiveQuoter: React.FC = () => {
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
     if (!file) return;
-    readFileSmart(file, (text) => processSlicerContent(text, file.name));
+    handleProcessUploadedFile(file);
   };
 
   // Copiar resumen de cotización al portapapeles

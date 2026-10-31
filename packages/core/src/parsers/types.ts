@@ -33,18 +33,18 @@ export interface SlicerParser {
 
   /**
    * Intenta extraer los datos de laminado de un contenido de archivo.
-   * @param content - Contenido del archivo (G-code o texto extraído de .3mf)
+   * @param content - Contenido del archivo (G-code de texto o bytes de paquete .3mf)
    * @param filename - Nombre del archivo (para detectar extensión)
    * @param options - Opciones contextuales como densidad del material activo
    * @returns Los datos extraídos, o null si este parser no reconoce el formato
    */
-  parse(content: string, filename?: string, options?: ParserOptions): SliceResult | null;
+  parse(content: string | Uint8Array, filename?: string, options?: ParserOptions): SliceResult | null;
 
   /**
    * Verifica si el contenido parece generado por este slicer.
    * Útil para auto-detectar cuál parser usar.
    */
-  canParse(content: string): boolean;
+  canParse(content: string | Uint8Array): boolean;
 }
 
 // ----------------------------------------------------------------------------

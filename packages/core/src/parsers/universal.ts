@@ -19,11 +19,35 @@ export const KNOWN_PARSERS: SlicerParser[] = [
  * 2. Si no fue identificado explícitamente por un slicer conocido, realiza una extracción genérica.
  * 3. Como último recurso, prueba los parsers individuales.
  */
-export function parseSlicerFile(content: string, filename?: string, options?: ParserOptions): SliceResult | null {
-  if (!content || typeof content !== 'string') return null;
+export function parseSlicerFile(content: string | Uint8Array, filename?: string, options?: ParserOptions): SliceResult | null {
+  if (!content) return null;
+
+  // 1. Probar primero si es un archivo .3MF o ZIP binario (ThreeMfParser)
+  const threeMfParser = KNOWN_PARSERS[0];
+  if (threeMfParser.canParse(content)) {
+    const result = threeMfParser.parse(content, filename, options);
+    if (result) return result;
+  }
+
+  // Si era un archivo con extensión .3mf y no se extrajeron métricas, no evaluar como texto G-Code
+  if (filename?.toLowerCase().endsWith('.3mf')) {
+    return null;
+  }
+
+  // Para G-Code convencional de texto: asegurar que sea string
+  let textContent = '';
+  if (typeof content === 'string') {
+    textContent = content;
+  } else {
+    try {
+      textContent = new TextDecoder('utf-8').decode(content);
+    } catch {
+      return null;
+    }
+  }
 
   // 0. Si contiene metadatos directos generados por plugins/scripts Slice2Price
-  const jsonMatch = content.match(/;Slice2Price_JSON:\s*(\{.+?\})/);
+  const jsonMatch = textContent.match(/;Slice2Price_JSON:\s*(\{.+?\})/);
   if (jsonMatch && jsonMatch[1]) {
     try {
       const data = JSON.parse(jsonMatch[1]);
@@ -43,23 +67,23 @@ export function parseSlicerFile(content: string, filename?: string, options?: Pa
     }
   }
 
-  // 1. Probar parser específico coincidente con canParse
-  for (const parser of KNOWN_PARSERS) {
-    if (parser.canParse(content)) {
-      const result = parser.parse(content, filename, options);
+  // 2. Probar parser específico coincidente con canParse
+  for (const parser of KNOWN_PARSERS.slice(1)) {
+    if (parser.canParse(textContent)) {
+      const result = parser.parse(textContent, filename, options);
       if (result) return result;
     }
   }
 
-  // 2. Extracción genérica (detecta tanto formato TIME en segundos como estimated time)
-  const genericResult = parseGenericGCode(content, filename, options);
+  // 3. Extracción genérica (detecta tanto formato TIME en segundos como estimated time)
+  const genericResult = parseGenericGCode(textContent, filename, options);
   if (genericResult) {
     return genericResult;
   }
 
-  // 3. Fallback a parsers individuales
-  for (const parser of KNOWN_PARSERS) {
-    const result = parser.parse(content, filename, options);
+  // 4. Fallback a parsers individuales
+  for (const parser of KNOWN_PARSERS.slice(1)) {
+    const result = parser.parse(textContent, filename, options);
     if (result) return result;
   }
 
