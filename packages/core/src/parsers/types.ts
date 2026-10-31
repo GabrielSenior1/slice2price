@@ -16,6 +16,14 @@ export interface SliceResult {
   sourceFile?: string;
 }
 
+/** Opciones contextuales para los parsers (ej. densidad del material activo) */
+export interface ParserOptions {
+  /** Densidad del material en g/cm³ (ej. 1.04 para ABS, 1.24 para PLA, 1.27 para PETG) */
+  density?: number;
+  /** Diámetro del filamento en mm (por defecto 1.75mm) */
+  diameter?: number;
+}
+
 /** Contrato que debe cumplir cada parser de slicer */
 export interface SlicerParser {
   /** Identificador del slicer (ej: 'orca', 'cura', 'creality') */
@@ -27,9 +35,10 @@ export interface SlicerParser {
    * Intenta extraer los datos de laminado de un contenido de archivo.
    * @param content - Contenido del archivo (G-code o texto extraído de .3mf)
    * @param filename - Nombre del archivo (para detectar extensión)
+   * @param options - Opciones contextuales como densidad del material activo
    * @returns Los datos extraídos, o null si este parser no reconoce el formato
    */
-  parse(content: string, filename?: string): SliceResult | null;
+  parse(content: string, filename?: string, options?: ParserOptions): SliceResult | null;
 
   /**
    * Verifica si el contenido parece generado por este slicer.

@@ -1,4 +1,4 @@
-import { SlicerParser, SliceResult, filamentLengthToGrams } from './types.js';
+import { SlicerParser, SliceResult, ParserOptions, filamentLengthToGrams } from './types.js';
 import { OrcaSlicerParser, parseTimeString } from './orca.js';
 import { CuraParser } from './cura.js';
 import { PrusaParser } from './prusa.js';
@@ -17,7 +17,7 @@ export const KNOWN_PARSERS: SlicerParser[] = [
  * 2. Si no fue identificado explícitamente por un slicer conocido, realiza una extracción genérica.
  * 3. Como último recurso, prueba los parsers individuales.
  */
-export function parseSlicerFile(content: string, filename?: string): SliceResult | null {
+export function parseSlicerFile(content: string, filename?: string, options?: ParserOptions): SliceResult | null {
   if (!content || typeof content !== 'string') return null;
 
   // 0. Si contiene metadatos directos generados por plugins/scripts Slice2Price
@@ -44,27 +44,27 @@ export function parseSlicerFile(content: string, filename?: string): SliceResult
   // 1. Probar parser específico coincidente con canParse
   for (const parser of KNOWN_PARSERS) {
     if (parser.canParse(content)) {
-      const result = parser.parse(content, filename);
+      const result = parser.parse(content, filename, options);
       if (result) return result;
     }
   }
 
   // 2. Extracción genérica (detecta tanto formato TIME en segundos como estimated time)
-  const genericResult = parseGenericGCode(content, filename);
+  const genericResult = parseGenericGCode(content, filename, options);
   if (genericResult) {
     return genericResult;
   }
 
   // 3. Fallback a parsers individuales
   for (const parser of KNOWN_PARSERS) {
-    const result = parser.parse(content, filename);
+    const result = parser.parse(content, filename, options);
     if (result) return result;
   }
 
   return null;
 }
 
-export function parseGenericGCode(content: string, filename?: string): SliceResult | null {
+export function parseGenericGCode(content: string, filename?: string, options?: ParserOptions): SliceResult | null {
   const sample = content.slice(0, 150000) + '\n' + (content.length > 200000 ? content.slice(-50000) : '');
 
   let printTimeHours = 0;
@@ -91,7 +91,7 @@ export function parseGenericGCode(content: string, filename?: string): SliceResu
     if (mMatch && mMatch[1]) {
       const val = parseFloat(mMatch[1]);
       const lengthMm = mMatch[2].toLowerCase() === 'm' ? val * 1000 : val;
-      filamentGrams = filamentLengthToGrams(lengthMm, 1.24);
+      filamentGrams = filamentLengthToGrams(lengthMm, options?.density ?? 1.24, options?.diameter ?? 1.75);
     }
   }
 

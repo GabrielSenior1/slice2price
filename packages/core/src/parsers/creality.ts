@@ -1,4 +1,4 @@
-import { SlicerParser, SliceResult, filamentLengthToGrams } from './types.js';
+import { SlicerParser, SliceResult, ParserOptions, filamentLengthToGrams } from './types.js';
 import { parseTimeString } from './orca.js';
 
 export class CrealityParser implements SlicerParser {
@@ -10,7 +10,7 @@ export class CrealityParser implements SlicerParser {
     return sample.includes('creality') || sample.includes('crealityprint');
   }
 
-  parse(content: string, filename?: string): SliceResult | null {
+  parse(content: string, filename?: string, options?: ParserOptions): SliceResult | null {
     const header = content.slice(0, 150000);
     const trailer = content.length > 200000 ? content.slice(-50000) : '';
     const sample = header + '\n' + trailer;
@@ -36,7 +36,7 @@ export class CrealityParser implements SlicerParser {
       if (filMatch && filMatch[1]) {
         const val = parseFloat(filMatch[1]);
         const lengthMm = filMatch[2].toLowerCase() === 'm' ? val * 1000 : val;
-        filamentGrams = filamentLengthToGrams(lengthMm, 1.24);
+        filamentGrams = filamentLengthToGrams(lengthMm, options?.density ?? 1.24, options?.diameter ?? 1.75);
       }
     }
 

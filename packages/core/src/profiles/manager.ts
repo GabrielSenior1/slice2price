@@ -64,12 +64,55 @@ export class ProfileManager<T extends AnyProfile> {
     return this.profiles.size;
   }
 
+  /** Valida los campos numéricos y requeridos del perfil (Falla N2) */
+  private validateProfileData(data: Record<string, any>): void {
+    const d = data;
+    if (d.name !== undefined && (typeof d.name !== 'string' || d.name.trim() === '')) {
+      throw new Error('El nombre del perfil no puede estar vacío');
+    }
+    // Impresora
+    if (d.powerConsumptionW !== undefined && (!Number.isFinite(d.powerConsumptionW) || d.powerConsumptionW < 0)) {
+      throw new Error('El consumo en Watts debe ser un número finito mayor o igual a 0');
+    }
+    if (d.depreciationPerHour !== undefined && (!Number.isFinite(d.depreciationPerHour) || d.depreciationPerHour < 0)) {
+      throw new Error('La depreciación por hora debe ser un número finito mayor o igual a 0');
+    }
+    // Material
+    if (d.pricePerKg !== undefined && (!Number.isFinite(d.pricePerKg) || d.pricePerKg < 0)) {
+      throw new Error('El precio por kg debe ser un número finito mayor o igual a 0');
+    }
+    if (d.density !== undefined && (!Number.isFinite(d.density) || d.density <= 0)) {
+      throw new Error('La densidad del material debe ser un número finito mayor a 0');
+    }
+    // Cliente
+    if (d.profitMargin !== undefined && (!Number.isFinite(d.profitMargin) || d.profitMargin < 0)) {
+      throw new Error('El margen de ganancia debe ser un número finito mayor o igual a 0');
+    }
+    if (d.discount !== undefined && (!Number.isFinite(d.discount) || d.discount < 0 || d.discount > 100)) {
+      throw new Error('El descuento debe ser un número finito entre 0 y 100');
+    }
+    if (d.defaultDesignCost !== undefined && (!Number.isFinite(d.defaultDesignCost) || d.defaultDesignCost < 0)) {
+      throw new Error('El costo de diseño no puede ser negativo');
+    }
+    // General
+    if (d.pricePerKwh !== undefined && (!Number.isFinite(d.pricePerKwh) || d.pricePerKwh < 0)) {
+      throw new Error('El precio por kWh debe ser un número finito mayor o igual a 0');
+    }
+    if (d.errorMargin !== undefined && (!Number.isFinite(d.errorMargin) || d.errorMargin < 0)) {
+      throw new Error('El margen de error no puede ser negativo');
+    }
+    if (d.failureRisk !== undefined && (!Number.isFinite(d.failureRisk) || d.failureRisk < 0)) {
+      throw new Error('El riesgo de fallo no puede ser negativo');
+    }
+  }
+
   // --------------------------------------------------------------------------
   // Escritura
   // --------------------------------------------------------------------------
 
   /** Crea un perfil nuevo con ID y timestamps automáticos. */
   create(data: CreateProfileData<T>): T {
+    this.validateProfileData(data);
     const now = new Date().toISOString();
     const profile = {
       ...data,
@@ -88,6 +131,7 @@ export class ProfileManager<T extends AnyProfile> {
     if (!existing) {
       throw new Error(`Perfil no encontrado: ${id}`);
     }
+    this.validateProfileData(changes);
 
     const updated = {
       ...existing,

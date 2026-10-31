@@ -4,8 +4,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { ProfileManager } from './manager.js';
-import type { PrinterProfile, MaterialProfile } from './types.js';
-import { DEFAULT_PRINTERS, DEFAULT_MATERIALS } from './defaults.js';
+import type { PrinterProfile, MaterialProfile, ClientProfile } from './types.js';
+import { DEFAULT_PRINTERS, DEFAULT_MATERIALS, DEFAULT_CLIENTS } from './defaults.js';
 
 // Generador de IDs predecible para las pruebas
 let idCounter = 0;
@@ -211,6 +211,53 @@ describe('ProfileManager', () => {
       manager.loadFromJSON(customData);
       expect(manager.count).toBe(1);
       expect(manager.getById('custom-1').name).toBe('Nylon');
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Validación de datos numéricos y consistencia (Falla N2)
+  // --------------------------------------------------------------------------
+  describe('validaciones de perfiles (Falla N2)', () => {
+    it('rechaza crear perfil con nombre vacío', () => {
+      const manager = new ProfileManager<PrinterProfile>();
+      expect(() =>
+        manager.create({
+          type: 'printer',
+          name: '   ',
+          model: 'Test',
+          powerConsumptionW: 200,
+          depreciationPerHour: 500,
+        })
+      ).toThrow('El nombre del perfil no puede estar vacío');
+    });
+
+    it('rechaza crear o actualizar perfil de impresora con potencia negativa o no finita', () => {
+      const manager = new ProfileManager<PrinterProfile>(DEFAULT_PRINTERS);
+      expect(() =>
+        manager.update('printer-ender3-pro', { powerConsumptionW: -50 })
+      ).toThrow('El consumo en Watts debe ser un número finito');
+      expect(() =>
+        manager.update('printer-ender3-pro', { powerConsumptionW: NaN })
+      ).toThrow('El consumo en Watts debe ser un número finito');
+    });
+
+    it('rechaza crear perfil de material con densidad <= 0', () => {
+      const manager = new ProfileManager<MaterialProfile>();
+      expect(() =>
+        manager.create({
+          type: 'material',
+          name: 'Fantasma',
+          pricePerKg: 50000,
+          density: 0,
+        })
+      ).toThrow('La densidad del material debe ser un número finito mayor a 0');
+    });
+
+    it('rechaza descuento fuera de rango 0-100 en perfil de cliente', () => {
+      const manager = new ProfileManager<ClientProfile>(DEFAULT_CLIENTS);
+      expect(() =>
+        manager.update('client-regular', { discount: 150 })
+      ).toThrow('El descuento debe ser un número finito entre 0 y 100');
     });
   });
 });

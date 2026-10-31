@@ -234,16 +234,16 @@ app.whenReady().then(() => {
     console.log('[Slice2Price] Vigilante automático iniciado en:', detected);
   }
 
-  // Registrar atajo global F10 para alternar el mini-overlay desde cualquier aplicación (E6)
+  // Registrar atajo global no conflictivo (Ctrl+Alt+P) para alternar el mini-overlay desde cualquier aplicación (N3)
   try {
-    const registered = globalShortcut.register('F10', () => {
+    const registered = globalShortcut.register('CommandOrControl+Alt+P', () => {
       toggleCompactMode();
     });
     if (!registered) {
-      console.warn('[Slice2Price] Advertencia: No se pudo registrar el atajo global F10');
+      console.warn('[Slice2Price] Advertencia: No se pudo registrar el atajo global Ctrl+Alt+P');
     }
   } catch (err) {
-    console.error('[Slice2Price] Error registrando globalShortcut F10:', err);
+    console.error('[Slice2Price] Error registrando globalShortcut:', err);
   }
 
   app.on('activate', () => {

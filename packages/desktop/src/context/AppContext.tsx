@@ -1,10 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useMemo } from 'react';
 import {
   ProfileManager,
   DEFAULT_PRINTERS,
   DEFAULT_MATERIALS,
   DEFAULT_CLIENTS,
   DEFAULT_GENERALS,
+  calculateCost,
   type CostBreakdown,
   type PrinterProfile,
   type MaterialProfile,
@@ -65,11 +66,20 @@ interface AppContextValue {
   loadedQuote: SavedQuote | null;
   setLoadedQuote: (quote: SavedQuote | null) => void;
 
-  // Estado unificado de cálculo en tiempo real (Falla E4)
+  // Estado unificado de cálculo en tiempo real (Falla E4, N1)
   activeBreakdown: CostBreakdown | null;
   setActiveBreakdown: (breakdown: CostBreakdown | null) => void;
   activePieceName: string;
   setActivePieceName: (name: string) => void;
+  activePiece: { pieceName: string; printTimeHours: number; filamentGrams: number; slicerName?: string } | null;
+  setActivePiece: (piece: { pieceName: string; printTimeHours: number; filamentGrams: number; slicerName?: string } | null) => void;
+
+  // Protección de cambios en edición (Falla E7)
+  hasUnsavedWork: boolean;
+  setHasUnsavedWork: (val: boolean) => void;
+  pendingSlicerEvent: { payload: any; quote: SavedQuote } | null;
+  loadPendingSlicerEvent: () => void;
+  dismissPendingSlicerEvent: () => void;
 
   // Toast
   toast: import('../types/index.js').ToastData | null;
@@ -89,6 +99,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isCompactMode, setIsCompactMode] = useState<boolean>(false);
   const [activeBreakdown, setActiveBreakdown] = useState<CostBreakdown | null>(null);
   const [activePieceName, setActivePieceName] = useState<string>('Pieza 3D');
+  const [activePiece, setActivePiece] = useState<{ pieceName: string; printTimeHours: number; filamentGrams: number; slicerName?: string } | null>(null);
+  const [hasUnsavedWork, setHasUnsavedWork] = useState<boolean>(false);
+  const [pendingSlicerEvent, setPendingSlicerEvent] = useState<{ payload: any; quote: SavedQuote } | null>(null);
+
+  const hasUnsavedWorkRef = useRef(hasUnsavedWork);
+  hasUnsavedWorkRef.current = hasUnsavedWork;
+  const isCompactModeRef = useRef(isCompactMode);
+  isCompactModeRef.current = isCompactMode;
 
   useEffect(() => {
     if (window.electronAPI?.isCompactMode) {
@@ -328,13 +346,68 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, 4000);
   };
 
-  // Escuchar eventos automáticos de laminación desde Electron (Fase 3)
+  const applySlicerQuote = (quote: SavedQuote, slicerName: string) => {
+    if (selectedPrinter && selectedMaterial && selectedClient && selectedGeneral) {
+      try {
+        const computedBreakdown = calculateCost(
+          {
+            pricePerKg: selectedMaterial.pricePerKg,
+            powerConsumptionW: selectedPrinter.powerConsumptionW,
+            depreciationPerHour: selectedPrinter.depreciationPerHour,
+            pricePerKwh: selectedGeneral.pricePerKwh,
+            errorMargin: selectedGeneral.errorMargin,
+            failureRisk: selectedGeneral.failureRisk,
+            difficultyPercent: 0,
+            profitMargin: selectedClient.profitMargin,
+            discount: selectedClient.discount,
+          },
+          {
+            printTimeHours: quote.printTimeHours,
+            filamentGrams: quote.filamentGrams,
+            extraCosts: 0,
+            quantity: 1,
+          }
+        );
+        setActiveBreakdown(computedBreakdown);
+      } catch (e) {
+        console.error('[Slice2Price] Error calculando costo automático:', e);
+      }
+    }
+
+    setActivePiece({
+      pieceName: quote.pieceName,
+      printTimeHours: quote.printTimeHours,
+      filamentGrams: quote.filamentGrams,
+      slicerName,
+    });
+    setActivePieceName(quote.pieceName);
+    setLoadedQuote(quote);
+    setHasUnsavedWork(false);
+  };
+
+  const loadPendingSlicerEvent = () => {
+    if (pendingSlicerEvent) {
+      applySlicerQuote(pendingSlicerEvent.quote, pendingSlicerEvent.payload.sliceResult.slicerName);
+      showToast(`Cotización "${pendingSlicerEvent.quote.pieceName}" cargada.`);
+      setPendingSlicerEvent(null);
+      if (!isCompactModeRef.current) {
+        setActiveTab('cotizador');
+      }
+    }
+  };
+
+  const dismissPendingSlicerEvent = () => {
+    setPendingSlicerEvent(null);
+    showToast('Laminado automático descartado', 'info');
+  };
+
+  // Escuchar eventos automáticos de laminación desde Electron (Fase 3 / E7 / N1)
   useEffect(() => {
     if (!window.electronAPI?.onSlicerEvent) return;
 
     const cleanup = window.electronAPI.onSlicerEvent((payload) => {
       const pieceCleanName = payload.fileName.replace(/\.[^/.]+$/, '');
-      setLoadedQuote({
+      const newQuote: SavedQuote = {
         id: 'auto_' + Date.now(),
         pieceName: pieceCleanName,
         timestamp: payload.timestamp,
@@ -352,10 +425,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           generalId: selectedGeneral?.id || '',
         },
         breakdown: { difficultyPercent: 0 } as any,
-      });
+      };
 
+      // Proteger el trabajo en edición si hay cambios activos y no está en modo overlay (E7)
+      if (hasUnsavedWorkRef.current && !isCompactModeRef.current) {
+        setPendingSlicerEvent({ payload, quote: newQuote });
+        showToast(`¡Laminado detectado: "${pieceCleanName}"! Tienes cambios en curso. Cárgalo cuando desees.`, 'info');
+        return;
+      }
+
+      applySlicerQuote(newQuote, payload.sliceResult.slicerName);
       showToast(`¡Laminado detectado de ${payload.sliceResult.slicerName}! "${pieceCleanName}" cargada.`);
-      setActiveTab('cotizador');
+      if (!isCompactModeRef.current) {
+        setActiveTab('cotizador');
+      }
     });
 
     return () => {
@@ -403,6 +486,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setActiveBreakdown,
         activePieceName,
         setActivePieceName,
+        activePiece,
+        setActivePiece,
+        hasUnsavedWork,
+        setHasUnsavedWork,
+        pendingSlicerEvent,
+        loadPendingSlicerEvent,
+        dismissPendingSlicerEvent,
         isCompactMode,
         toggleCompactMode,
         toast,

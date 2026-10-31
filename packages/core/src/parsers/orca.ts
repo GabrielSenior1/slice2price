@@ -1,4 +1,4 @@
-import { SlicerParser, SliceResult, filamentLengthToGrams } from './types.js';
+import { SlicerParser, SliceResult, ParserOptions, filamentLengthToGrams } from './types.js';
 
 export function parseTimeString(timeStr: string): number {
   let totalHours = 0;
@@ -28,7 +28,7 @@ export class OrcaSlicerParser implements SlicerParser {
     );
   }
 
-  parse(content: string, filename?: string): SliceResult | null {
+  parse(content: string, filename?: string, options?: ParserOptions): SliceResult | null {
     const header = content.slice(0, 150000);
     const trailer = content.length > 200000 ? content.slice(-50000) : '';
     const sample = header + '\n' + trailer;
@@ -58,7 +58,7 @@ export class OrcaSlicerParser implements SlicerParser {
     } else {
       const mmMatch = sample.match(/(?:total )?filament (?:used|length) \[mm\]\s*[:=]\s*([0-9.]+)/i);
       if (mmMatch && mmMatch[1]) {
-        filamentGrams = filamentLengthToGrams(parseFloat(mmMatch[1]), 1.24);
+        filamentGrams = filamentLengthToGrams(parseFloat(mmMatch[1]), options?.density ?? 1.24, options?.diameter ?? 1.75);
       }
     }
 

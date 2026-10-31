@@ -1,4 +1,4 @@
-import { SlicerParser, SliceResult, filamentLengthToGrams } from './types.js';
+import { SlicerParser, SliceResult, ParserOptions, filamentLengthToGrams } from './types.js';
 
 export class CuraParser implements SlicerParser {
   readonly slicerId = 'cura';
@@ -9,7 +9,7 @@ export class CuraParser implements SlicerParser {
     return sample.includes('cura') || sample.includes('cura_steamengine');
   }
 
-  parse(content: string, filename?: string): SliceResult | null {
+  parse(content: string, filename?: string, options?: ParserOptions): SliceResult | null {
     const sample = content.length > 200000 ? content.slice(0, 100000) + '\n' + content.slice(-50000) : content;
 
     let printTimeHours = 0;
@@ -28,7 +28,7 @@ export class CuraParser implements SlicerParser {
       if (filMatch && filMatch[1]) {
         const val = parseFloat(filMatch[1]);
         const lengthMm = filMatch[2].toLowerCase() === 'm' ? val * 1000 : val;
-        filamentGrams = filamentLengthToGrams(lengthMm, 1.24);
+        filamentGrams = filamentLengthToGrams(lengthMm, options?.density ?? 1.24, options?.diameter ?? 1.75);
       }
     }
 

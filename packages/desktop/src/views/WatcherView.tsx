@@ -142,7 +142,7 @@ export const WatcherView: React.FC = () => {
             <span className="badge badge--primary">Fase 3 Integrada</span>
           </div>
           <p className="text-body-sm color-outline">
-            Detecta automáticamente archivos .gcode o .3mf generados por tus laminadores y cotiza al instante
+            Detecta automáticamente archivos .gcode exportados por tus laminadores y scripts puente para cotizar al instante
           </p>
         </div>
 

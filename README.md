@@ -23,11 +23,11 @@ Slice2Price/
 
 ## Etapas del Desarrollo
 
-- **✅ Etapa 1 — Núcleo (`@slice2price/core`):** Motor de cálculo con fórmulas exactas en pesos colombianos (COP), CRUD de perfiles (impresoras, materiales, clientes, tarifas CREG), formateo y suite de 69 tests unitarios.
+- **✅ Etapa 1 — Núcleo (`@slice2price/core`):** Motor de cálculo con fórmulas exactas en pesos colombianos (COP), CRUD de perfiles validados numéricamente (impresoras, materiales con densidad activa, clientes, tarifas CREG), formateo y suite de 92 tests unitarios.
 - **✅ Etapa 2 — App de Escritorio (`@slice2price/desktop`):** Interfaz completa con Electron 33 + React 18 + Vite 6 + TypeScript. Cotizador en tiempo real con chips de estratos de energía, gestión visual de perfiles, historial y exportación (PDF/Texto/Portapapeles).
-- **✅ Etapa 3 — Vigilante de Slicers en Tiempo Real:** Monitoreo en segundo plano de carpetas de laminadores en Windows (%APPDATA% de Orca, Bambu, Cura, Prusa, Creality, Descargas y Escritorio). Parsers automáticos de G-code y .3MF.
+- **✅ Etapa 3 — Vigilante de Slicers en Tiempo Real:** Monitoreo en segundo plano de carpetas de laminadores en Windows (%APPDATA% de Orca, Bambu, Cura, Prusa, Creality y carpeta puente). Parsers automáticos y universales de G-code con debounce de escritura estable.
 - **🚀 Etapa 4 — Plugins y Mini Overlay Flotante:**
-  - **Mini Overlay Flotante Always-on-Top:** Widget compacto que permanece siempre en primer plano sobre tu slicer, mostrando precio en tiempo real con atajo **F10** o botón en cabecera.
+  - **Mini Overlay Flotante Always-on-Top:** Widget compacto que permanece siempre en primer plano sobre tu slicer, mostrando precio en tiempo real con atajo global **Ctrl+Alt+P** (o **F10** en ventana) y **Ctrl+C** para copia rápida de cotización.
   - **Notificaciones nativas:** Alertas visuales del sistema en Windows al detectar un archivo laminado.
   - **Plugins dedicados:** Integración directa para Cura (`plugins/cura/`), PrusaSlicer (`plugins/prusa/`) y OrcaSlicer/Bambu Studio (`plugins/orca_bambu/`).
 

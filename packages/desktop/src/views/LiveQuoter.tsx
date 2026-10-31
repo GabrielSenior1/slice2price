@@ -31,7 +31,14 @@ export const LiveQuoter: React.FC = () => {
     toggleCompactMode,
     setActiveBreakdown,
     setActivePieceName,
+    hasUnsavedWork,
+    setHasUnsavedWork,
+    pendingSlicerEvent,
+    loadPendingSlicerEvent,
+    dismissPendingSlicerEvent,
   } = useApp();
+
+  const [calcError, setCalcError] = useState<string | null>(null);
 
   // Inputs de la pieza
   const [pieceName, setPieceName] = useState('Pieza 3D');
@@ -156,8 +163,11 @@ export const LiveQuoter: React.FC = () => {
 
   const breakdown: CostBreakdown = useMemo(() => {
     try {
-      return calculateCost(calcParams, pieceInput);
-    } catch {
+      const computed = calculateCost(calcParams, pieceInput);
+      setCalcError(null);
+      return computed;
+    } catch (err: any) {
+      setCalcError(err?.message || 'Error en los parámetros de cálculo');
       return {
         filamentCost: 0,
         energyCost: 0,
@@ -190,9 +200,11 @@ export const LiveQuoter: React.FC = () => {
     setActivePieceName(pieceName);
   }, [breakdown, pieceName, setActiveBreakdown, setActivePieceName]);
 
-  // Parser interactivo para G-code y texto de slicers (Fase 3)
+  // Parser interactivo para G-code y texto de slicers (Fase 3 y E5b con densidad de material)
   const processSlicerContent = (content: string, filename: string) => {
-    const result = parseSlicerFile(content, filename);
+    const result = parseSlicerFile(content, filename, {
+      density: selectedMaterial?.density ?? 1.24,
+    });
     if (result && (result.printTimeHours > 0 || result.filamentGrams > 0)) {
       const h = Math.floor(result.printTimeHours);
       const m = Math.round((result.printTimeHours - h) * 60);
@@ -349,7 +361,64 @@ _Cotización generada con Slice2Price_`;
   };
 
   return (
-    <div className="grid-main">
+    <div className="flex-col gap-md">
+      {/* Banner de protección contra sobreescritura de trabajo en edición (Falla E7) */}
+      {pendingSlicerEvent && (
+        <div
+          style={{
+            padding: '12px 16px',
+            background: 'rgba(255, 181, 155, 0.12)',
+            border: '1px solid var(--primary)',
+            borderRadius: 'var(--radius-lg)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span className="material-symbols-outlined icon-md color-primary">sync_problem</span>
+            <div>
+              <div className="font-semibold" style={{ fontSize: '13px' }}>
+                Nuevo archivo detectado: {pendingSlicerEvent.quote.pieceName} ({pendingSlicerEvent.quote.printTimeHours}h, {pendingSlicerEvent.quote.filamentGrams}g)
+              </div>
+              <div className="text-body-sm color-outline">
+                Tienes una cotización en edición. ¿Deseas reemplazarla con esta nueva pieza del laminador?
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+            <button className="btn btn--primary btn--sm" onClick={loadPendingSlicerEvent}>
+              Cargar Pieza
+            </button>
+            <button className="btn btn--ghost btn--sm" onClick={dismissPendingSlicerEvent}>
+              Descartar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Banner de error de parámetros de cálculo (Falla N2) */}
+      {calcError && (
+        <div
+          style={{
+            padding: '10px 14px',
+            background: 'rgba(255, 80, 80, 0.15)',
+            border: '1px solid #ff5555',
+            borderRadius: 'var(--radius-lg)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            color: '#ff9999',
+            fontSize: '13px',
+          }}
+        >
+          <span className="material-symbols-outlined icon-sm">warning</span>
+          <span><strong>Parámetros no válidos:</strong> {calcError}</span>
+        </div>
+      )}
+
+      <div className="grid-main">
       {/* ── COLUMNA IZQUIERDA: INPUTS Y CONFIGURACIÓN ──────────────────────── */}
       <div className="flex-col gap-md">
         {/* Dropzone o selector de archivo del Slicer */}
@@ -1336,6 +1405,7 @@ _Cotización generada con Slice2Price_`;
           <p style={{ margin: 0 }}>• Slice2Price • Moneda: Pesos Colombianos (COP).</p>
         </div>
       </div>
+    </div>
     </div>
   );
 };

@@ -30,18 +30,41 @@ class Slice2PriceExtension(Extension):
         """
         Se ejecuta cuando Cura finaliza el cálculo de laminación.
         Guarda los datos en la carpeta de intercambio de Slice2Price.
-        Defensivo contra variaciones de argumentos de señal en Cura (Falla E10).
+        La señal printDurationMessage de Cura emite:
+        (plate_number, time_dict, material_amounts, material_lengths, material_weights, material_costs, material_names)
         """
         try:
-            time_seconds = args[0] if len(args) > 0 and isinstance(args[0], (int, float)) else 0
-            material_amounts = args[1] if len(args) > 1 else []
-            print_information = self._application.getPrintInformation()
-            current_time = print_information.currentPrintTime
-            total_time_hours = current_time.getDisplayString() if hasattr(current_time, 'getDisplayString') else str(time_seconds / 3600.0)
+            time_seconds = 0.0
+            total_grams = 0.0
 
-            # Extraer material en gramos
-            material_weights = print_information.materialWeights
-            total_grams = sum(material_weights) if material_weights else 0.0
+            # 1. Extraer tiempo en segundos (args[1] es time_dict en CuraEngine)
+            if len(args) > 1 and isinstance(args[1], dict):
+                if 'total' in args[1]:
+                    time_seconds = float(args[1]['total'])
+                else:
+                    time_seconds = float(sum(v for v in args[1].values() if isinstance(v, (int, float))))
+            elif len(args) > 0 and isinstance(args[0], (int, float)) and args[0] > 10:
+                time_seconds = float(args[0])
+
+            # Respaldo si time_seconds sigue en 0
+            if time_seconds <= 0:
+                try:
+                    cur_time = self._application.getPrintInformation().currentPrintTime
+                    if hasattr(cur_time, 'getRawValue'):
+                        time_seconds = float(cur_time.getRawValue())
+                except Exception:
+                    pass
+
+            # 2. Extraer peso en gramos (args[4] es material_weights en CuraEngine)
+            if len(args) > 4 and isinstance(args[4], (list, tuple)) and len(args[4]) > 0:
+                total_grams = float(sum(args[4]))
+            else:
+                try:
+                    weights = self._application.getPrintInformation().materialWeights
+                    if weights:
+                        total_grams = float(sum(weights))
+                except Exception:
+                    pass
 
             # Nombre del proyecto / modelo activo
             scene_root = self._application.getController().getScene().getRoot()

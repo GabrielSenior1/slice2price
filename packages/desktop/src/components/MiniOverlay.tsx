@@ -6,6 +6,7 @@ export const MiniOverlay: React.FC = () => {
   const {
     activeBreakdown,
     activePieceName,
+    activePiece,
     loadedQuote,
     selectedPrinter,
     selectedMaterial,
@@ -18,19 +19,23 @@ export const MiniOverlay: React.FC = () => {
 
   // Trigger brief visual pulse when a new quote or file is loaded
   useEffect(() => {
-    if (loadedQuote) {
+    if (loadedQuote || activePiece) {
       setLastEventPulse(true);
       const timer = setTimeout(() => setLastEventPulse(false), 1200);
       return () => clearTimeout(timer);
     }
-  }, [loadedQuote?.id, loadedQuote?.timestamp]);
+  }, [loadedQuote?.id, loadedQuote?.timestamp, activePiece?.pieceName]);
 
-  const hasPiece = !!(activeBreakdown && (activeBreakdown.subtotal > 0 || loadedQuote));
-  const pieceName = hasPiece ? (activePieceName || loadedQuote?.pieceName || 'Pieza 3D') : 'Sin pieza cargada';
-  const slicerSource = loadedQuote ? 'Slicer Detectado' : (hasPiece ? 'Cotizador Activo' : 'Vigilante en Espera');
+  const hasPiece = !!(activeBreakdown && (activePiece || activeBreakdown.subtotal > 0 || loadedQuote));
+  const pieceName = hasPiece
+    ? (activePiece?.pieceName || activePieceName || loadedQuote?.pieceName || 'Pieza 3D')
+    : 'Sin pieza cargada';
+  const slicerSource = activePiece?.slicerName
+    ? `${activePiece.slicerName}`
+    : (loadedQuote ? 'Slicer Detectado' : (hasPiece ? 'Cotizador Activo' : 'Vigilante en Espera'));
 
-  const hours = loadedQuote ? loadedQuote.printTimeHours : 0;
-  const grams = loadedQuote ? loadedQuote.filamentGrams : (activeBreakdown ? Math.round((activeBreakdown.filamentCost / (selectedMaterial?.pricePerKg || 65000)) * 1000) : 0);
+  const hours = activePiece ? activePiece.printTimeHours : (loadedQuote ? loadedQuote.printTimeHours : 0);
+  const grams = activePiece ? activePiece.filamentGrams : (loadedQuote ? loadedQuote.filamentGrams : (activeBreakdown ? Math.round((activeBreakdown.filamentCost / (selectedMaterial?.pricePerKg || 65000)) * 1000) : 0));
 
   const hoursInt = Math.floor(hours);
   const minutesInt = Math.round((hours - hoursInt) * 60);
@@ -57,10 +62,21 @@ export const MiniOverlay: React.FC = () => {
       showToast('No hay una cotización activa para copiar', 'warning');
       return;
     }
-    const text = `Slice2Price: ${pieceName} • ${activeBreakdown.quantity} ud(s) • Total: ${formatCOP(activeBreakdown.totalAllUnits)}`;
+    const text = `Slice2Price: ${pieceName} • ${hours}h • ${grams}g • ${activeBreakdown.quantity} ud(s) • Total: ${formatCOP(activeBreakdown.totalAllUnits)}`;
     navigator.clipboard.writeText(text);
-    showToast('¡Cotización copiada al portapapeles!');
+    showToast('¡Cotización copiada al portapapeles! (Ctrl+C)');
   };
+
+  // Atajo de teclado Ctrl+C dentro del overlay para copiar (Falla N3 / E6)
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+        handleCopy();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [activeBreakdown, hasPiece, pieceName, hours, grams]);
 
   return (
     <div className={`mini-overlay-container ${lastEventPulse ? 'mini-overlay-container--pulse' : ''}`}>
