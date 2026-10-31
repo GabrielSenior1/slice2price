@@ -219,6 +219,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return managers.generals.findById(selectedIds.generalId) || generals[0] || DEFAULT_GENERALS[0];
   }, [managers, selectedIds.generalId, generals]);
 
+  // Sincronizar densidad del material activo con el vigilante en Electron (Falla E5b)
+  useEffect(() => {
+    if (selectedMaterial?.density && window.electronAPI?.setActiveMaterialDensity) {
+      window.electronAPI.setActiveMaterialDensity(selectedMaterial.density);
+    }
+  }, [selectedMaterial?.id, selectedMaterial?.density]);
+
   const setSelectedPrinterId = (id: string) => setSelectedIds((s: any) => ({ ...s, printerId: id }));
   const setSelectedMaterialId = (id: string) => setSelectedIds((s: any) => ({ ...s, materialId: id }));
   const setSelectedClientId = (id: string) => setSelectedIds((s: any) => ({ ...s, clientId: id }));

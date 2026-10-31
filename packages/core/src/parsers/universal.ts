@@ -3,8 +3,10 @@ import { OrcaSlicerParser, parseTimeString } from './orca.js';
 import { CuraParser } from './cura.js';
 import { PrusaParser } from './prusa.js';
 import { CrealityParser } from './creality.js';
+import { ThreeMfParser } from './threeMf.js';
 
 export const KNOWN_PARSERS: SlicerParser[] = [
+  new ThreeMfParser(),
   new OrcaSlicerParser(),
   new CuraParser(),
   new PrusaParser(),

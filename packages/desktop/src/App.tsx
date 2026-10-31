@@ -28,23 +28,19 @@ const MainContent: React.FC = () => {
 const AppShell: React.FC = () => {
   const { isCompactMode } = useApp();
 
-  if (isCompactMode) {
-    return (
-      <>
-        <MiniOverlay />
-        <Toast />
-      </>
-    );
-  }
-
   return (
-    <div className="app-layout">
-      <Header />
-      <Sidebar />
-      <MainContent />
-      <Footer />
+    <>
+      <div style={{ display: isCompactMode ? 'block' : 'none', height: '100%' }}>
+        <MiniOverlay />
+      </div>
+      <div className="app-layout" style={{ display: isCompactMode ? 'none' : 'grid' }}>
+        <Header />
+        <Sidebar />
+        <MainContent />
+        <Footer />
+      </div>
       <Toast />
-    </div>
+    </>
   );
 };
 

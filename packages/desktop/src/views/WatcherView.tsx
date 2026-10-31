@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext.js';
 import type { SlicerDetectedInfo } from '../types/index.js';
 
 export const WatcherView: React.FC = () => {
-  const { setActiveTab, showToast, setLoadedQuote, toggleCompactMode } = useApp();
+  const { setActiveTab, showToast, setLoadedQuote, toggleCompactMode, selectedMaterial } = useApp();
   const [watcherEnabled, setWatcherEnabled] = useState(true);
   const [slicers, setSlicers] = useState<SlicerDetectedInfo[]>([]);
   const [customPaths, setCustomPaths] = useState<string[]>([]);
@@ -71,7 +71,7 @@ export const WatcherView: React.FC = () => {
       setLoading(true);
       const filePath = await window.electronAPI.selectFile();
       if (filePath) {
-        const result = await window.electronAPI.parseFilePath(filePath);
+        const result = await window.electronAPI.parseFilePath(filePath, { density: selectedMaterial?.density });
         if (result) {
           const fileName = filePath.split(/[/\\]/).pop() || 'Pieza';
           setLoadedQuote({

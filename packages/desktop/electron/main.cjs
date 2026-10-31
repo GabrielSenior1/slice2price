@@ -205,14 +205,19 @@ ipcMain.handle('select-file', async () => {
   return result.filePaths[0];
 });
 
-ipcMain.handle('parse-file-path', async (event, filePath) => {
+ipcMain.handle('set-active-material-density', (event, density) => {
+  slicerWatcher.setActiveDensity(density);
+  return true;
+});
+
+ipcMain.handle('parse-file-path', async (event, filePath, options) => {
   if (!filePath || !fs.existsSync(filePath)) return null;
   const content = slicerWatcher.readFileHeader(filePath);
   if (!content) return null;
 
   try {
     const { parseSlicerFile } = await import('@slice2price/core');
-    const result = parseSlicerFile(content, path.basename(filePath));
+    const result = parseSlicerFile(content, path.basename(filePath), options);
     return result;
   } catch (e) {
     console.error('Error parseando archivo:', e);

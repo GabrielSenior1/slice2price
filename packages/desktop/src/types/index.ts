@@ -61,7 +61,8 @@ export interface ElectronAPI {
   stopWatcher: () => Promise<{ enabled: boolean; watchedPaths: string[] }>;
   selectFolder: () => Promise<string | null>;
   selectFile: () => Promise<string | null>;
-  parseFilePath: (filePath: string) => Promise<SliceResult | null>;
+  parseFilePath: (filePath: string, options?: { density?: number; diameter?: number }) => Promise<SliceResult | null>;
+  setActiveMaterialDensity: (density: number) => Promise<boolean>;
   toggleDevTools?: () => Promise<boolean>;
   toggleCompactMode: (forceState?: boolean) => Promise<boolean>;
   isCompactMode: () => Promise<boolean>;

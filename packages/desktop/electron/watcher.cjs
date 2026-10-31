@@ -117,6 +117,12 @@ class SlicerWatcher {
     this.enabled = !!state;
   }
 
+  setActiveDensity(density) {
+    if (typeof density === 'number' && density > 0) {
+      this.activeDensity = density;
+    }
+  }
+
   isEnabled() {
     return this.enabled;
   }
@@ -241,7 +247,7 @@ class SlicerWatcher {
       if (!content) return;
 
       const { parseSlicerFile } = await getCore();
-      const result = parseSlicerFile(content, fileName);
+      const result = parseSlicerFile(content, fileName, { density: this.activeDensity || 1.24 });
 
       if (result) {
         const payload = {

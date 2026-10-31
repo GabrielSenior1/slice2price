@@ -120,8 +120,32 @@ export const LiveQuoter: React.FC = () => {
 
       showToast(`Cotización "${loadedQuote.pieceName}" cargada`);
       setLoadedQuote(null);
+      setHasUnsavedWork(false);
     }
   }, [loadedQuote]);
+
+  // Rastrear si el usuario ha modificado campos para proteger el trabajo activo (Falla E7)
+  const hasMountedRef = useRef(false);
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+    setHasUnsavedWork(true);
+  }, [
+    pieceName,
+    timeHours,
+    timeMinutes,
+    filamentGrams,
+    extraCosts,
+    quantity,
+    difficultyPercent,
+    materialPricePerKg,
+    printerWatts,
+    pricePerKwh,
+    profitMargin,
+    discount,
+  ]);
 
   // Cálculo en tiempo real
   const totalPrintHours = useMemo(() => {
@@ -341,6 +365,7 @@ _Cotización generada con Slice2Price_`;
       customProfitMargin: profitMargin,
       customDiscount: discount,
     });
+    setHasUnsavedWork(false);
   };
 
   const handleReset = () => {
@@ -357,6 +382,7 @@ _Cotización generada con Slice2Price_`;
     setDifficultyPercent(0);
     setProfitMargin(selectedClient.profitMargin);
     setDiscount(selectedClient.discount);
+    setHasUnsavedWork(false);
     showToast('Valores reiniciados');
   };
 

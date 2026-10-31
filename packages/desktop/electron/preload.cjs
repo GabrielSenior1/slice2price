@@ -19,7 +19,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Diálogos nativos del sistema
   selectFolder: () => ipcRenderer.invoke('select-folder'),
   selectFile: () => ipcRenderer.invoke('select-file'),
-  parseFilePath: (filePath) => ipcRenderer.invoke('parse-file-path', filePath),
+  parseFilePath: (filePath, options) => ipcRenderer.invoke('parse-file-path', filePath, options),
+  setActiveMaterialDensity: (density) => ipcRenderer.invoke('set-active-material-density', density),
 
   // Modo Mini Overlay Flotante (Etapa 4)
   toggleCompactMode: (forceState) => ipcRenderer.invoke('toggle-compact-mode', forceState),
