@@ -26,10 +26,10 @@ export const HistoryView: React.FC = () => {
     const h = Math.floor(quote.printTimeHours);
     const m = Math.round((quote.printTimeHours - h) * 60);
 
-    const text = `COTIZACIÓN IMPRESIÓN 3D — SLICE2PRICE
+    const text = `COTIZACIÓN IMPRESIÓN 3D - SLICE2PRICE
 Pieza: ${quote.pieceName}
 Fecha: ${new Date(quote.timestamp).toLocaleDateString('es-CO')}
-Cantidad: ${quote.quantity} unidad(es)
+${quote.dimensions ? `Medidas: ${quote.dimensions}\n` : ''}Cantidad: ${quote.quantity} unidad(es)
 ---------------------------------------------
 • Tiempo: ${h}h ${m}m
 • Material: ${quote.profiles.materialName} (~${quote.filamentGrams}g)
@@ -39,8 +39,7 @@ Cantidad: ${quote.quantity} unidad(es)
 Subtotal Producción: ${formatCOP(quote.breakdown.subtotal)}
 Margen Ganancia: ${quote.breakdown.profitMarginPercent}%
 PRECIO TOTAL: ${formatCOP(quote.breakdown.totalAllUnits)} COP
-${quote.quantity > 1 ? `(Precio unitario: ${formatCOP(quote.breakdown.totalPerUnit)} COP)` : ''}
----------------------------------------------
+${quote.quantity > 1 ? `(Precio unitario: ${formatCOP(quote.breakdown.totalPerUnit)} COP)\n` : ''}---------------------------------------------
 Slice2Price • Moneda: COP`;
 
     navigator.clipboard.writeText(text).then(() => {
@@ -48,19 +47,23 @@ Slice2Price • Moneda: COP`;
     });
   };
 
-  const handleShareWhatsApp = (quote: SavedQuote) => {
+  const handleShareWhatsApp = async (quote: SavedQuote) => {
     const h = Math.floor(quote.printTimeHours);
     const m = Math.round((quote.printTimeHours - h) * 60);
 
-    const text = `*COTIZACIÓN IMPRESIÓN 3D — SLICE2PRICE*
+    const text = `*COTIZACION IMPRESION 3D - SLICE2PRICE*
 📦 *Pieza:* ${quote.pieceName}
-🔢 *Cantidad:* ${quote.quantity} unidad(es)
-⏱️ *Tiempo estimado:* ${h}h ${m}m
+${quote.dimensions ? `📏 *Medidas:* ${quote.dimensions}\n` : ''}🔢 *Cantidad:* ${quote.quantity} unidad(es)
 🧵 *Material:* ${quote.profiles.materialName} (~${quote.filamentGrams}g)
-━━━━━━━━━━━━━━━━━━━━
+⏰ *Tiempo estimado:* ${h}h ${m}m
+----------------------------------------
 💰 *PRECIO TOTAL:* ${formatCOP(quote.breakdown.totalAllUnits)} COP
-${quote.quantity > 1 ? `🏷️ *Precio unitario:* ${formatCOP(quote.breakdown.totalPerUnit)} COP\n` : ''}━━━━━━━━━━━━━━━━━━━━
-_Cotización generada con Slice2Price_`;
+${quote.quantity > 1 ? `💵 *Precio unitario:* ${formatCOP(quote.breakdown.totalPerUnit)} COP\n` : ''}----------------------------------------
+_Cotizacion generada con Slice2Price_`;
+
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch { }
 
     const encoded = encodeURIComponent(text);
     const waUrl = `https://wa.me/?text=${encoded}`;
@@ -69,7 +72,7 @@ _Cotización generada con Slice2Price_`;
     } else {
       window.open(waUrl, '_blank');
     }
-    showToast('Abriendo WhatsApp...', 'success');
+    showToast('¡Texto copiado al portapapeles y abriendo WhatsApp!', 'success');
   };
 
   return (
@@ -180,6 +183,12 @@ _Cotización generada con Slice2Price_`;
 
                   <div className="profile-card__details" style={{ marginTop: '4px', flexWrap: 'wrap' }}>
                     <span>Impresora: <strong>{q.profiles.printerName}</strong></span>
+                    {q.dimensions && (
+                      <>
+                        <span>•</span>
+                        <span>Medidas: <strong>{q.dimensions}</strong></span>
+                      </>
+                    )}
                     <span>•</span>
                     <span>Material: <strong>{q.profiles.materialName} ({q.filamentGrams}g)</strong></span>
                     <span>•</span>

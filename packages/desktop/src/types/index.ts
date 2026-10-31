@@ -8,6 +8,7 @@ export interface SavedQuote {
   filamentGrams: number;
   extraCosts: number;
   quantity: number;
+  dimensions?: string;
   profiles: {
     printerName: string;
     materialName: string;

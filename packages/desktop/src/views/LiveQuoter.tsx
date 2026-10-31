@@ -48,6 +48,33 @@ export const LiveQuoter: React.FC = () => {
   const [extraCosts, setExtraCosts] = useState<number>(5000);
   const [quantity, setQuantity] = useState<number>(1);
 
+  // Medidas de la pieza (no influyen en el precio, informativas para cliente y WhatsApp)
+  const [dimX, setDimX] = useState<string>('');
+  const [dimY, setDimY] = useState<string>('');
+  const [dimZ, setDimZ] = useState<string>('');
+  const [dimUnit, setDimUnit] = useState<'mm' | 'cm'>('mm');
+
+  // Formato legible de medidas
+  const pieceDimensions = useMemo(() => {
+    const x = dimX.trim();
+    const y = dimY.trim();
+    const z = dimZ.trim();
+    if (x && y && z) {
+      return `${x} x ${y} x ${z} ${dimUnit}`;
+    }
+    if (x && y && !z) {
+      return `${x} x ${y} ${dimUnit}`;
+    }
+    if (!x && !y && z) {
+      return `${z} ${dimUnit} (Alto)`;
+    }
+    const parts = [];
+    if (x) parts.push(`X: ${x} ${dimUnit}`);
+    if (y) parts.push(`Y: ${y} ${dimUnit}`);
+    if (z) parts.push(`Z: ${z} ${dimUnit}`);
+    return parts.join(' • ');
+  }, [dimX, dimY, dimZ, dimUnit]);
+
   // Costo real del filamento (editable en tiempo real, sobreescribe el perfil)
   const [materialPricePerKg, setMaterialPricePerKg] = useState<number>(selectedMaterial.pricePerKg);
 
@@ -120,6 +147,24 @@ export const LiveQuoter: React.FC = () => {
         setDifficultyPercent(0);
       }
 
+      if (loadedQuote.dimensions) {
+        const match = loadedQuote.dimensions.match(/^([0-9.]+)\s*x\s*([0-9.]+)\s*x\s*([0-9.]+)\s*(mm|cm)$/i);
+        if (match) {
+          setDimX(match[1]);
+          setDimY(match[2]);
+          setDimZ(match[3]);
+          setDimUnit((match[4].toLowerCase() as 'mm' | 'cm') || 'mm');
+        } else {
+          setDimX('');
+          setDimY('');
+          setDimZ('');
+        }
+      } else {
+        setDimX('');
+        setDimY('');
+        setDimZ('');
+      }
+
       showToast(`Cotización "${loadedQuote.pieceName}" cargada`);
       setLoadedQuote(null);
       setHasUnsavedWork(false);
@@ -148,6 +193,10 @@ export const LiveQuoter: React.FC = () => {
     setHasUnsavedWork(true);
   }, [
     pieceName,
+    dimX,
+    dimY,
+    dimZ,
+    dimUnit,
     timeHours,
     timeMinutes,
     filamentGrams,
@@ -323,9 +372,9 @@ export const LiveQuoter: React.FC = () => {
 
   // Copiar resumen de cotización al portapapeles
   const handleCopyQuote = () => {
-    const text = `COTIZACIÓN IMPRESIÓN 3D — SLICE2PRICE
+    const text = `COTIZACIÓN IMPRESIÓN 3D - SLICE2PRICE
 Pieza: ${pieceName}
-Cantidad: ${quantity} unidad(es)
+${pieceDimensions ? `Medidas: ${pieceDimensions}\n` : ''}Cantidad: ${quantity} unidad(es)
 ---------------------------------------------
 • Tiempo: ${timeHours}h ${timeMinutes}m (${totalPrintHours.toFixed(2)}h)
 • Material: ${selectedMaterial.name} (~${filamentGrams}g @ $${materialPricePerKg.toLocaleString('es-CO')}/kg)
@@ -345,19 +394,21 @@ Generado con Slice2Price • Moneda: Pesos Colombianos (COP)`;
     });
   };
 
-  // Compartir cotización por WhatsApp con formato optimizado
-  const handleShareWhatsApp = () => {
-    const text = `*COTIZACIÓN IMPRESIÓN 3D — SLICE2PRICE*
+  // Compartir cotización por WhatsApp con formato optimizado y sin caracteres corruptibles
+  const handleShareWhatsApp = async () => {
+    const text = `*COTIZACION IMPRESION 3D - SLICE2PRICE*
 📦 *Pieza:* ${pieceName}
-🔢 *Cantidad:* ${quantity} unidad(es)
-⏱️ *Tiempo estimado:* ${timeHours}h ${timeMinutes}m
+${pieceDimensions ? `📏 *Medidas:* ${pieceDimensions}\n` : ''}🔢 *Cantidad:* ${quantity} unidad(es)
 🧵 *Material:* ${selectedMaterial.name} (~${filamentGrams}g)
-🖨️ *Impresora:* ${selectedPrinter.name} (${printerWatts}W)
-${difficultyPercent > 0 ? `⚙️ *Dificultad técnica:* +${difficultyPercent}%\n` : ''}📈 *Multiplicador:* x${breakdown.profitMultiplier} (+${breakdown.profitMarginPercent}%)
-━━━━━━━━━━━━━━━━━━━━
+⏰ *Tiempo estimado:* ${timeHours}h ${timeMinutes}m
+----------------------------------------
 💰 *PRECIO TOTAL:* ${formatCOP(breakdown.totalAllUnits)} COP
-${quantity > 1 ? `🏷️ *Precio unitario:* ${formatCOP(breakdown.totalPerUnit)} COP\n` : ''}━━━━━━━━━━━━━━━━━━━━
-_Cotización generada con Slice2Price_`;
+${quantity > 1 ? `💵 *Precio unitario:* ${formatCOP(breakdown.totalPerUnit)} COP\n` : ''}----------------------------------------
+_Cotizacion generada con Slice2Price_`;
+
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch { }
 
     const encoded = encodeURIComponent(text);
     const waUrl = `https://wa.me/?text=${encoded}`;
@@ -366,7 +417,7 @@ _Cotización generada con Slice2Price_`;
     } else {
       window.open(waUrl, '_blank');
     }
-    showToast('Abriendo WhatsApp para enviar cotización...', 'success');
+    showToast('¡Texto copiado al portapapeles y abriendo WhatsApp!', 'success');
   };
 
   // Imprimir o guardar como PDF comprobante oficial
@@ -382,6 +433,7 @@ _Cotización generada con Slice2Price_`;
       filamentGrams,
       extraCosts,
       quantity,
+      dimensions: pieceDimensions || undefined,
       profiles: {
         printerName: `${selectedPrinter.name} (${printerWatts}W)`,
         materialName: `${selectedMaterial.name} ($${materialPricePerKg.toLocaleString('es-CO')}/kg)`,
@@ -400,6 +452,10 @@ _Cotización generada con Slice2Price_`;
 
   const handleReset = () => {
     setPieceName('Pieza 3D');
+    setDimX('');
+    setDimY('');
+    setDimZ('');
+    setDimUnit('mm');
     setTimeHours(2);
     setTimeMinutes(30);
     setFilamentGrams(60);
@@ -563,6 +619,75 @@ _Cotización generada con Slice2Price_`;
                 onChange={(e) => setPieceName(e.target.value)}
                 placeholder="Ej. Soporte para audífonos"
               />
+            </div>
+
+            {/* Medidas de la Pieza (Opcional - informativo para cliente y WhatsApp) */}
+            <div className="input-group">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label className="input-group__label text-label-caption">
+                  Medidas de la Pieza (Opcional • No afecta el precio)
+                </label>
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    className={`btn btn--xs ${dimUnit === 'mm' ? 'btn--primary' : 'btn--ghost'}`}
+                    onClick={() => setDimUnit('mm')}
+                    style={{ padding: '1px 8px', fontSize: '11px', height: '22px' }}
+                    title="Medidas en milímetros"
+                  >
+                    mm
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn--xs ${dimUnit === 'cm' ? 'btn--primary' : 'btn--ghost'}`}
+                    onClick={() => setDimUnit('cm')}
+                    style={{ padding: '1px 8px', fontSize: '11px', height: '22px' }}
+                    title="Medidas en centímetros"
+                  >
+                    cm
+                  </button>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
+                <div className="input-wrap">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={dimX}
+                    onChange={(e) => setDimX(e.target.value)}
+                    placeholder="X (Largo)"
+                  />
+                  <span className="input-wrap__suffix">{dimUnit}</span>
+                </div>
+                <div className="input-wrap">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={dimY}
+                    onChange={(e) => setDimY(e.target.value)}
+                    placeholder="Y (Ancho)"
+                  />
+                  <span className="input-wrap__suffix">{dimUnit}</span>
+                </div>
+                <div className="input-wrap">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={dimZ}
+                    onChange={(e) => setDimZ(e.target.value)}
+                    placeholder="Z (Alto)"
+                  />
+                  <span className="input-wrap__suffix">{dimUnit}</span>
+                </div>
+              </div>
+              {pieceDimensions && (
+                <span className="text-body-sm color-outline" style={{ fontSize: '11px', marginTop: '2px' }}>
+                  Medidas para WhatsApp/Ticket: <strong>{pieceDimensions}</strong>
+                </span>
+              )}
             </div>
 
             {/* Grid: Tiempo de impresión y Filamento */}
@@ -1432,6 +1557,11 @@ _Cotización generada con Slice2Price_`;
             <tr>
               <td style={{ padding: '12px 10px', border: '1px solid #ccc' }}>
                 <strong>{pieceName}</strong>
+                {pieceDimensions && (
+                  <div style={{ fontSize: '11px', color: '#555', marginTop: '2px' }}>
+                    Medidas: {pieceDimensions}
+                  </div>
+                )}
                 {difficultyPercent > 0 && (
                   <div style={{ fontSize: '11px', color: '#666', marginTop: '2px' }}>
                     Dificultad geométrica: +{difficultyPercent}%
