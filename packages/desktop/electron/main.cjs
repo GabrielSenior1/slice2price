@@ -215,7 +215,16 @@ ipcMain.handle('parse-file-path', async (event, filePath, options) => {
   const ext = path.extname(filePath).toLowerCase();
   let content = null;
   try {
-    content = ext === '.3mf' ? fs.readFileSync(filePath) : slicerWatcher.readFileHeader(filePath);
+    if (ext === '.3mf') {
+      const stats = fs.statSync(filePath);
+      if (stats.size > 100 * 1024 * 1024) {
+        console.warn(`[Main] Archivo 3MF demasiado grande (>100MB): ${filePath}`);
+        return null;
+      }
+      content = fs.readFileSync(filePath);
+    } else {
+      content = slicerWatcher.readFileHeader(filePath);
+    }
   } catch (err) {
     return null;
   }

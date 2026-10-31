@@ -123,6 +123,13 @@ export const LiveQuoter: React.FC = () => {
       showToast(`Cotización "${loadedQuote.pieceName}" cargada`);
       setLoadedQuote(null);
       setHasUnsavedWork(false);
+
+      // Si los valores no cambiaron, los setters de React no disparan el efecto dependiente de inputs.
+      // Limpiamos la bandera asíncronamente para garantizar que la próxima edición manual no se pierda (Hallazgo S2).
+      const timer = setTimeout(() => {
+        isApplyingExternalQuote.current = false;
+      }, 50);
+      return () => clearTimeout(timer);
     }
   }, [loadedQuote]);
 

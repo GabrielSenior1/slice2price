@@ -23,7 +23,7 @@ function getAvailableSlicers() {
     if (!fs.existsSync(bridgeFolder)) {
       fs.mkdirSync(bridgeFolder, { recursive: true });
     }
-  } catch (e) {}
+  } catch (e) { }
 
   const candidates = [
     {
@@ -245,6 +245,12 @@ class SlicerWatcher {
 
       let content;
       if (ext === '.3mf') {
+        // Tope de tamaño para archivos .3mf (50 MB) para no saturar memoria en carpetas vigiladas (Hallazgo S3)
+        const MAX_3MF_SIZE = 50 * 1024 * 1024;
+        if (stats.size > MAX_3MF_SIZE) {
+          console.warn(`[Watcher] Archivo 3MF ignorado por superar 50 MB (${(stats.size / (1024 * 1024)).toFixed(1)} MB): ${fileName}`);
+          return;
+        }
         // Para .3mf: leer el archivo completo como Buffer binario intacto (Falla E3b)
         try {
           content = fs.readFileSync(filePath);
@@ -348,7 +354,7 @@ class SlicerWatcher {
     for (const [dir, watcher] of this.watchers.entries()) {
       try {
         watcher.close();
-      } catch (e) {}
+      } catch (e) { }
     }
     this.watchers.clear();
     this.watchedPaths.clear();

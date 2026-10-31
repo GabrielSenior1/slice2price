@@ -278,5 +278,40 @@ M104 S220
       expect(res?.printTimeHours).toBe(2.25);
       expect(res?.filamentGrams).toBe(42.6);
     });
+
+    it('debe sumar el tiempo y peso de todas las placas en archivos .3mf multi-placa (Hallazgo S1) y omitir modelos 3D pesados (Hallazgo S3)', async () => {
+      const { zipSync, strToU8 } = await import('fflate');
+      const xmlMultiPlateConfig = `<?xml version="1.0" encoding="UTF-8"?>
+<config>
+  <header>
+    <header_item key="X-BBL-Client-Type" value="slicer"/>
+  </header>
+  <plate>
+    <metadata key="index" value="1"/>
+    <metadata key="prediction" value="3600"/>
+    <metadata key="weight" value="10.0"/>
+  </plate>
+  <plate>
+    <metadata key="index" value="2"/>
+    <metadata key="prediction" value="7200"/>
+    <metadata key="weight" value="20.0"/>
+  </plate>
+</config>`;
+
+      // Simulamos paquete 3MF que contiene geometría 3D pesada y metadatos de slice
+      const zipBytes = zipSync({
+        'Metadata/slice_info.config': strToU8(xmlMultiPlateConfig),
+        '3D/3dmodel.model': strToU8('<model><vertices>...</vertices></model>'),
+      });
+
+      const res = parseSlicerFile(zipBytes, 'proyecto_multiplaca.3mf');
+      expect(res).not.toBeNull();
+      // Tiempo total: 3600s + 7200s = 10800s (3 horas)
+      expect(res?.printTimeHours).toBe(3.0);
+      // Peso total: 10.0g + 20.0g = 30.0g
+      expect(res?.filamentGrams).toBe(30.0);
+      // Detecta que tiene 2 placas
+      expect(res?.slicerName).toContain('2 placas');
+    });
   });
 });
