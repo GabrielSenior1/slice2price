@@ -55,14 +55,15 @@ def main():
                 detected_slicer = "OrcaSlicer"
                 break
 
-        # Buscar métricas en el archivo
+        # Buscar métricas en el archivo (soporta = de OrcaSlicer y : de Bambu Studio)
         for line in lines[:300] + lines[-300:]:
-            if 'estimated printing time' in line.lower() or 'total estimated time' in line.lower():
-                match = re.search(r'=\s*([0-9dhms\s]+)', line)
+            line_l = line.lower()
+            if 'estimated printing time' in line_l or 'total estimated time' in line_l or 'model printing time' in line_l:
+                match = re.search(r'[:=]\s*([0-9dhms\s]+)', line)
                 if match and not print_time_hours:
                     print_time_hours = parse_time_str(match.group(1))
-            elif 'filament used [g]' in line.lower():
-                match = re.search(r'filament used \[g\]\s*=\s*([0-9.]+)', line)
+            elif 'filament used [g]' in line_l or 'filament weight [g]' in line_l:
+                match = re.search(r'(?:used|weight) \[g\]\s*[:=]\s*([0-9.]+)', line, re.IGNORECASE)
                 if match and not filament_grams:
                     filament_grams = round(float(match.group(1)), 2)
 

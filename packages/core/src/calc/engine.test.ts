@@ -432,13 +432,31 @@ describe('paramsFromProfiles', () => {
       expect(res.totalAllUnits).toBe(0);
     });
 
-    it('rechaza cantidad 0 con excepción controlada', () => {
+    it('rechaza cantidad 0 o fraccionaria con excepción controlada', () => {
       expect(() => calculateCost(baseParams, { ...basePiece, quantity: 0 })).toThrow('La cantidad debe ser al menos 1');
+      expect(() => calculateCost(baseParams, { ...basePiece, quantity: 1.5 })).toThrow('La cantidad debe ser un número entero');
+      expect(() => calculateCost(baseParams, { ...basePiece, quantity: NaN })).toThrow('debe ser un número finito válido');
     });
 
     it('rechaza tiempo o filamento negativo con excepción controlada', () => {
       expect(() => calculateCost(baseParams, { ...basePiece, printTimeHours: -0.5 })).toThrow('El tiempo de impresión no puede ser negativo');
       expect(() => calculateCost(baseParams, { ...basePiece, filamentGrams: -10 })).toThrow('Los gramos de filamento no pueden ser negativos');
+    });
+
+    it('rechaza insumos extra negativos o NaN (Falla E1)', () => {
+      expect(() => calculateCost(baseParams, { ...basePiece, extraCosts: -999999 })).toThrow('Los insumos extra no pueden ser negativos');
+      expect(() => calculateCost(baseParams, { ...basePiece, extraCosts: NaN })).toThrow('debe ser un número finito válido');
+    });
+
+    it('rechaza descuentos inválidos (menores a 0 o mayores a 100) (Falla E1)', () => {
+      expect(() => calculateCost({ ...baseParams, discount: 150 }, basePiece)).toThrow('El descuento debe estar entre 0 y 100');
+      expect(() => calculateCost({ ...baseParams, discount: -5 }, basePiece)).toThrow('El descuento debe estar entre 0 y 100');
+    });
+
+    it('rechaza parámetros NaN o no finitos en cualquier variable (Falla E1)', () => {
+      expect(() => calculateCost({ ...baseParams, pricePerKg: NaN }, basePiece)).toThrow('debe ser un número finito válido');
+      expect(() => calculateCost({ ...baseParams, powerConsumptionW: Infinity }, basePiece)).toThrow('debe ser un número finito válido');
+      expect(() => calculateCost({ ...baseParams, errorMargin: -1 }, basePiece)).toThrow('El margen de error no puede ser negativo');
     });
   });
 });

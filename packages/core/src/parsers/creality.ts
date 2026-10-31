@@ -31,7 +31,8 @@ export class CrealityParser implements SlicerParser {
     if (gMatch && gMatch[1]) {
       filamentGrams = parseFloat(gMatch[1]);
     } else {
-      const filMatch = sample.match(/;Filament used:\s*([0-9.]+)\s*(m|mm)/i);
+      // (mm|m) en ese orden específico para evitar que "mm" coincida parcialmente con "m"
+      const filMatch = sample.match(/;Filament used:\s*([0-9.]+)\s*(mm|m)/i);
       if (filMatch && filMatch[1]) {
         const val = parseFloat(filMatch[1]);
         const lengthMm = filMatch[2].toLowerCase() === 'm' ? val * 1000 : val;

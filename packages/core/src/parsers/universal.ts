@@ -25,10 +25,13 @@ export function parseSlicerFile(content: string, filename?: string): SliceResult
   if (jsonMatch && jsonMatch[1]) {
     try {
       const data = JSON.parse(jsonMatch[1]);
-      if (typeof data.printTimeHours === 'number' || typeof data.filamentGrams === 'number') {
+      const time = Number(data.printTimeHours) || 0;
+      const grams = Number(data.filamentGrams) || 0;
+      // Solo aceptar si contiene métricas reales mayores a 0 (E2b)
+      if (time > 0 || grams > 0) {
         return {
-          printTimeHours: Number(data.printTimeHours) || 0,
-          filamentGrams: Number(data.filamentGrams) || 0,
+          printTimeHours: time,
+          filamentGrams: grams,
           slicerName: data.slicerName || 'Plugin Slice2Price',
           sourceFile: data.pieceName || filename,
         };
@@ -72,19 +75,19 @@ export function parseGenericGCode(content: string, filename?: string): SliceResu
   if (timeSec && timeSec[1]) {
     printTimeHours = parseInt(timeSec[1], 10) / 3600;
   } else {
-    const timeMatch = sample.match(/estimated printing time[^\r\n=]*=\s*([^\r\n;]+)/i);
+    const timeMatch = sample.match(/(?:total )?estimated (?:printing )?time[^\r\n:=]*[:=]\s*([^\r\n;]+)/i);
     if (timeMatch && timeMatch[1]) {
       printTimeHours = parseTimeString(timeMatch[1]);
     }
   }
 
   // Filamento en gramos
-  const gMatch = sample.match(/(?:total )?filament used \[g\]\s*=\s*([0-9.]+)/i);
+  const gMatch = sample.match(/(?:total )?filament (?:used|weight) \[g\]\s*[:=]\s*([0-9.]+)/i);
   if (gMatch && gMatch[1]) {
     filamentGrams = parseFloat(gMatch[1]);
   } else {
-    // Filamento en metros
-    const mMatch = sample.match(/;Filament used:\s*([0-9.]+)\s*(m|mm)/i);
+    // Filamento en metros/milímetros ((mm|m) para no confundir mm con m)
+    const mMatch = sample.match(/;Filament used:\s*([0-9.]+)\s*(mm|m)/i);
     if (mMatch && mMatch[1]) {
       const val = parseFloat(mMatch[1]);
       const lengthMm = mMatch[2].toLowerCase() === 'm' ? val * 1000 : val;

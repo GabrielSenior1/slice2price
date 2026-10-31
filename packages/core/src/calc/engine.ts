@@ -149,10 +149,51 @@ export function paramsFromProfiles(profiles: ProfileCombination): CalcParams {
  * ```
  */
 export function calculateCost(params: CalcParams, piece: PieceInput): CostBreakdown {
-  // Validaciones básicas
+  // ── Validaciones exhaustivas de robustez numérica ──────────────────────────
+  const valuesToCheck = [
+    { name: 'Tiempo de impresión', val: piece.printTimeHours },
+    { name: 'Gramos de filamento', val: piece.filamentGrams },
+    { name: 'Insumos extra', val: piece.extraCosts },
+    { name: 'Cantidad', val: piece.quantity },
+    { name: 'Precio por kg', val: params.pricePerKg },
+    { name: 'Consumo de potencia', val: params.powerConsumptionW },
+    { name: 'Depreciación por hora', val: params.depreciationPerHour },
+    { name: 'Precio kWh', val: params.pricePerKwh },
+    { name: 'Margen de error', val: params.errorMargin },
+    { name: 'Riesgo de fallo', val: params.failureRisk },
+    { name: 'Margen de ganancia', val: params.profitMargin },
+    { name: 'Descuento', val: params.discount },
+  ];
+
+  if (params.difficultyPercent !== undefined && params.difficultyPercent !== null) {
+    valuesToCheck.push({ name: 'Dificultad', val: params.difficultyPercent });
+  }
+
+  for (const item of valuesToCheck) {
+    if (typeof item.val !== 'number' || !Number.isFinite(item.val)) {
+      throw new Error(`${item.name} debe ser un número finito válido`);
+    }
+  }
+
   if (piece.printTimeHours < 0) throw new Error('El tiempo de impresión no puede ser negativo');
   if (piece.filamentGrams < 0) throw new Error('Los gramos de filamento no pueden ser negativos');
+  if (piece.extraCosts < 0) throw new Error('Los insumos extra no pueden ser negativos');
   if (piece.quantity < 1) throw new Error('La cantidad debe ser al menos 1');
+  if (!Number.isInteger(piece.quantity)) throw new Error('La cantidad debe ser un número entero');
+
+  if (params.pricePerKg < 0) throw new Error('El precio por kg no puede ser negativo');
+  if (params.powerConsumptionW < 0) throw new Error('El consumo en watts no puede ser negativo');
+  if (params.depreciationPerHour < 0) throw new Error('La depreciación por hora no puede ser negativa');
+  if (params.pricePerKwh < 0) throw new Error('El precio por kWh no puede ser negativo');
+  if (params.errorMargin < 0) throw new Error('El margen de error no puede ser negativo');
+  if (params.failureRisk < 0) throw new Error('El riesgo de fallo no puede ser negativo');
+  if (params.profitMargin < 0) throw new Error('El margen de ganancia no puede ser negativo');
+  if (params.discount < 0 || params.discount > 100) {
+    throw new Error('El descuento debe estar entre 0 y 100');
+  }
+  if ((params.difficultyPercent ?? 0) < 0) {
+    throw new Error('El porcentaje de dificultad no puede ser negativo');
+  }
 
   // ── Costos base ──────────────────────────────────────────────────────────
   const filamentCost = (piece.filamentGrams / 1000) * params.pricePerKg;

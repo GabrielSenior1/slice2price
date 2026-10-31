@@ -5,6 +5,7 @@ import {
   DEFAULT_MATERIALS,
   DEFAULT_CLIENTS,
   DEFAULT_GENERALS,
+  type CostBreakdown,
   type PrinterProfile,
   type MaterialProfile,
   type ClientProfile,
@@ -64,6 +65,12 @@ interface AppContextValue {
   loadedQuote: SavedQuote | null;
   setLoadedQuote: (quote: SavedQuote | null) => void;
 
+  // Estado unificado de cálculo en tiempo real (Falla E4)
+  activeBreakdown: CostBreakdown | null;
+  setActiveBreakdown: (breakdown: CostBreakdown | null) => void;
+  activePieceName: string;
+  setActivePieceName: (name: string) => void;
+
   // Toast
   toast: import('../types/index.js').ToastData | null;
   toastMessage: string | null;
@@ -80,6 +87,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeTab, setActiveTab] = useState<ActiveTab>('cotizador');
   const [loadedQuote, setLoadedQuote] = useState<SavedQuote | null>(null);
   const [isCompactMode, setIsCompactMode] = useState<boolean>(false);
+  const [activeBreakdown, setActiveBreakdown] = useState<CostBreakdown | null>(null);
+  const [activePieceName, setActivePieceName] = useState<string>('Pieza 3D');
 
   useEffect(() => {
     if (window.electronAPI?.isCompactMode) {
@@ -342,7 +351,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           clientId: selectedClient?.id || '',
           generalId: selectedGeneral?.id || '',
         },
-        breakdown: {} as any,
+        breakdown: { difficultyPercent: 0 } as any,
       });
 
       showToast(`¡Laminado detectado de ${payload.sliceResult.slicerName}! "${pieceCleanName}" cargada.`);
@@ -390,6 +399,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         clearHistory,
         loadedQuote,
         setLoadedQuote,
+        activeBreakdown,
+        setActiveBreakdown,
+        activePieceName,
+        setActivePieceName,
         isCompactMode,
         toggleCompactMode,
         toast,

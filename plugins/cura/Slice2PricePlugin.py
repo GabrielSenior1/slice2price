@@ -26,12 +26,15 @@ class Slice2PriceExtension(Extension):
     def _onSceneChanged(self):
         pass
 
-    def _onSliceFinished(self, time_seconds, material_amounts):
+    def _onSliceFinished(self, *args, **kwargs):
         """
         Se ejecuta cuando Cura finaliza el cálculo de laminación.
         Guarda los datos en la carpeta de intercambio de Slice2Price.
+        Defensivo contra variaciones de argumentos de señal en Cura (Falla E10).
         """
         try:
+            time_seconds = args[0] if len(args) > 0 and isinstance(args[0], (int, float)) else 0
+            material_amounts = args[1] if len(args) > 1 else []
             print_information = self._application.getPrintInformation()
             current_time = print_information.currentPrintTime
             total_time_hours = current_time.getDisplayString() if hasattr(current_time, 'getDisplayString') else str(time_seconds / 3600.0)

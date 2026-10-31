@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext.js';
-import { calculateCost, formatCOP } from '@slice2price/core';
+import { formatCOP } from '@slice2price/core';
 
 export const MiniOverlay: React.FC = () => {
   const {
+    activeBreakdown,
+    activePieceName,
     loadedQuote,
     selectedPrinter,
     selectedMaterial,
-    selectedClient,
-    selectedGeneral,
     toggleCompactMode,
     setActiveTab,
     showToast,
@@ -25,40 +25,15 @@ export const MiniOverlay: React.FC = () => {
     }
   }, [loadedQuote?.id, loadedQuote?.timestamp]);
 
-  // Parameters for calculation
-  const hours = loadedQuote ? loadedQuote.printTimeHours : 3.5;
-  const grams = loadedQuote ? loadedQuote.filamentGrams : 45;
-  const pieceName = loadedQuote?.pieceName || 'Pieza 3D en Espera';
-  const slicerSource = loadedQuote?.profiles?.printerName ? 'Slicer Detectado' : 'Modo Vigilante Activo';
+  const hasPiece = !!(activeBreakdown && (activeBreakdown.subtotal > 0 || loadedQuote));
+  const pieceName = hasPiece ? (activePieceName || loadedQuote?.pieceName || 'Pieza 3D') : 'Sin pieza cargada';
+  const slicerSource = loadedQuote ? 'Slicer Detectado' : (hasPiece ? 'Cotizador Activo' : 'Vigilante en Espera');
 
-  const breakdown = useMemo(() => {
-    if (!selectedPrinter || !selectedMaterial || !selectedClient || !selectedGeneral) {
-      return null;
-    }
+  const hours = loadedQuote ? loadedQuote.printTimeHours : 0;
+  const grams = loadedQuote ? loadedQuote.filamentGrams : (activeBreakdown ? Math.round((activeBreakdown.filamentCost / (selectedMaterial?.pricePerKg || 65000)) * 1000) : 0);
 
-    try {
-      return calculateCost(
-        {
-          pricePerKg: selectedMaterial.pricePerKg,
-          powerConsumptionW: selectedPrinter.powerConsumptionW,
-          depreciationPerHour: selectedPrinter.depreciationPerHour,
-          pricePerKwh: selectedGeneral.pricePerKwh,
-          errorMargin: selectedGeneral.errorMargin,
-          failureRisk: selectedGeneral.failureRisk,
-          profitMargin: selectedClient.profitMargin,
-          discount: selectedClient.discount,
-        },
-        {
-          printTimeHours: hours,
-          filamentGrams: grams,
-          extraCosts: loadedQuote?.extraCosts || 0,
-          quantity: loadedQuote?.quantity || 1,
-        }
-      );
-    } catch {
-      return null;
-    }
-  }, [hours, grams, selectedPrinter, selectedMaterial, selectedClient, selectedGeneral, loadedQuote]);
+  const hoursInt = Math.floor(hours);
+  const minutesInt = Math.round((hours - hoursInt) * 60);
 
   const handleExpand = () => {
     toggleCompactMode(false);
@@ -78,14 +53,14 @@ export const MiniOverlay: React.FC = () => {
   };
 
   const handleCopy = () => {
-    if (!breakdown) return;
-    const text = `Slice2Price: ${pieceName} • ${hours}h • ${grams}g • Total: ${formatCOP(breakdown.totalAllUnits)}`;
+    if (!activeBreakdown || !hasPiece) {
+      showToast('No hay una cotización activa para copiar', 'warning');
+      return;
+    }
+    const text = `Slice2Price: ${pieceName} • ${activeBreakdown.quantity} ud(s) • Total: ${formatCOP(activeBreakdown.totalAllUnits)}`;
     navigator.clipboard.writeText(text);
     showToast('¡Cotización copiada al portapapeles!');
   };
-
-  const hoursInt = Math.floor(hours);
-  const minutesInt = Math.round((hours - hoursInt) * 60);
 
   return (
     <div className={`mini-overlay-container ${lastEventPulse ? 'mini-overlay-container--pulse' : ''}`}>
@@ -137,10 +112,17 @@ export const MiniOverlay: React.FC = () => {
         <div className="mini-overlay-price-box">
           <div className="mini-overlay-price-label">PRECIO ESTIMADO</div>
           <div className="mini-overlay-price-value">
-            {breakdown ? formatCOP(breakdown.totalAllUnits) : 'Calculando...'}
+            {hasPiece && activeBreakdown ? formatCOP(activeBreakdown.totalAllUnits) : '—'}
           </div>
           <div className="mini-overlay-price-sub">
-            Margen {selectedClient?.profitMargin || 40}% • 1 unidad
+            {hasPiece && activeBreakdown ? (
+              <>
+                Margen {activeBreakdown.profitMarginPercent}% • {activeBreakdown.quantity} {activeBreakdown.quantity === 1 ? 'unidad' : 'unidades'}
+                {activeBreakdown.discountPercent > 0 && ` (-${activeBreakdown.discountPercent}%)`}
+              </>
+            ) : (
+              'Esperando archivo de laminación'
+            )}
           </div>
         </div>
 
@@ -148,11 +130,11 @@ export const MiniOverlay: React.FC = () => {
         <div className="mini-overlay-metrics">
           <div className="mini-overlay-metric-pill">
             <span className="material-symbols-outlined icon-xs color-secondary">timer</span>
-            <span>{hoursInt}h {minutesInt}m</span>
+            <span>{hoursInt > 0 || minutesInt > 0 ? `${hoursInt}h ${minutesInt}m` : '0h 0m'}</span>
           </div>
           <div className="mini-overlay-metric-pill">
             <span className="material-symbols-outlined icon-xs color-tertiary">scale</span>
-            <span>{grams}g</span>
+            <span>{grams > 0 ? `${grams}g` : '0g'}</span>
           </div>
           <div className="mini-overlay-metric-pill mini-overlay-metric-pill--hardware" title={`${selectedPrinter?.name || 'Impresora'} - ${selectedMaterial?.name || 'Material'}`}>
             <span className="material-symbols-outlined icon-xs color-outline">precision_manufacturing</span>
@@ -165,7 +147,8 @@ export const MiniOverlay: React.FC = () => {
           <button
             className="btn btn--secondary btn--sm mini-overlay-action-btn"
             onClick={handleCopy}
-            title="Copiar resumen al portapapeles"
+            disabled={!hasPiece}
+            title={hasPiece ? "Copiar resumen al portapapeles" : "No hay cotización para copiar"}
           >
             <span className="material-symbols-outlined icon-xs">content_copy</span>
             Copiar

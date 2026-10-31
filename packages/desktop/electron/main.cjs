@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, shell, globalShortcut } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { SlicerWatcher, getAvailableSlicers } = require('./watcher.cjs');
@@ -234,11 +234,29 @@ app.whenReady().then(() => {
     console.log('[Slice2Price] Vigilante automático iniciado en:', detected);
   }
 
+  // Registrar atajo global F10 para alternar el mini-overlay desde cualquier aplicación (E6)
+  try {
+    const registered = globalShortcut.register('F10', () => {
+      toggleCompactMode();
+    });
+    if (!registered) {
+      console.warn('[Slice2Price] Advertencia: No se pudo registrar el atajo global F10');
+    }
+  } catch (err) {
+    console.error('[Slice2Price] Error registrando globalShortcut F10:', err);
+  }
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
   });
+});
+
+app.on('will-quit', () => {
+  try {
+    globalShortcut.unregisterAll();
+  } catch (e) {}
 });
 
 app.on('window-all-closed', () => {

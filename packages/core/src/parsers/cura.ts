@@ -23,7 +23,8 @@ export class CuraParser implements SlicerParser {
     if (filGramsMatch && filGramsMatch[1]) {
       filamentGrams = parseFloat(filGramsMatch[1]);
     } else {
-      const filMatch = sample.match(/;Filament used:\s*([0-9.]+)\s*(m|mm)/i);
+      // (mm|m) en ese orden específico para evitar que "mm" coincida parcialmente con "m"
+      const filMatch = sample.match(/;Filament used:\s*([0-9.]+)\s*(mm|m)/i);
       if (filMatch && filMatch[1]) {
         const val = parseFloat(filMatch[1]);
         const lengthMm = filMatch[2].toLowerCase() === 'm' ? val * 1000 : val;

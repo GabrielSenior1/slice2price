@@ -123,10 +123,11 @@ class SlicerWatcher {
 
   /**
    * Espera a que el archivo termine de escribirse verificando que el tamaño
-   * permanezca estable entre lecturas consecutivas.
+   * permanezca estable entre lecturas consecutivas (Falla E9).
    */
-  async waitForFileStable(filePath, maxAttempts = 6, intervalMs = 250) {
+  async waitForFileStable(filePath, maxAttempts = 10, intervalMs = 250) {
     let lastSize = -1;
+    let consecutiveSame = 0;
     let attempts = 0;
 
     while (attempts < maxAttempts) {
@@ -134,16 +135,22 @@ class SlicerWatcher {
       try {
         const stats = fs.statSync(filePath);
         if (stats.size > 0 && stats.size === lastSize) {
-          return true;
+          consecutiveSame++;
+          if (consecutiveSame >= 2) {
+            return true; // Tamaño estable verificado en 2 lecturas consecutivas
+          }
+        } else {
+          consecutiveSame = 0;
+          lastSize = stats.size;
         }
-        lastSize = stats.size;
       } catch (e) {
-        // En caso de bloqueo temporal por el proceso del slicer
+        consecutiveSame = 0;
       }
       await new Promise((r) => setTimeout(r, intervalMs));
       attempts++;
     }
-    return fs.existsSync(filePath);
+    // Si tras maxAttempts sigue mutando o no estabilizó, no procesar archivo incompleto
+    return false;
   }
 
   /**
@@ -198,6 +205,13 @@ class SlicerWatcher {
     }
 
     const fileName = path.basename(filePath);
+
+    // Si es .txt, solo procesar si proviene del puente Slice2Price o termina en .gcode.txt para evitar ruido (Falla E9)
+    if (ext === '.txt') {
+      const isBridgeFile = filePath.toLowerCase().includes('slice2price') || fileName.toLowerCase().endsWith('.gcode.txt');
+      if (!isBridgeFile) return;
+    }
+
     // Ignorar temporales o descargas parciales
     if (fileName.startsWith('.') || fileName.startsWith('~$') || fileName.includes('.crdownload') || fileName.includes('.tmp')) {
       return;

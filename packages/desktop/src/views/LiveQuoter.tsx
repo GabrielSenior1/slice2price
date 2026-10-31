@@ -29,6 +29,8 @@ export const LiveQuoter: React.FC = () => {
     loadedQuote,
     setLoadedQuote,
     toggleCompactMode,
+    setActiveBreakdown,
+    setActivePieceName,
   } = useApp();
 
   // Inputs de la pieza
@@ -105,6 +107,8 @@ export const LiveQuoter: React.FC = () => {
       if (loadedQuote.customDiscount !== undefined) setDiscount(loadedQuote.customDiscount);
       if (loadedQuote.breakdown?.difficultyPercent !== undefined) {
         setDifficultyPercent(loadedQuote.breakdown.difficultyPercent);
+      } else {
+        setDifficultyPercent(0);
       }
 
       showToast(`Cotización "${loadedQuote.pieceName}" cargada`);
@@ -180,6 +184,12 @@ export const LiveQuoter: React.FC = () => {
     }
   }, [calcParams, pieceInput]);
 
+  // Sincronizar cálculo activo con el contexto global y MiniOverlay (Falla E4)
+  useEffect(() => {
+    setActiveBreakdown(breakdown);
+    setActivePieceName(pieceName);
+  }, [breakdown, pieceName, setActiveBreakdown, setActivePieceName]);
+
   // Parser interactivo para G-code y texto de slicers (Fase 3)
   const processSlicerContent = (content: string, filename: string) => {
     const result = parseSlicerFile(content, filename);
@@ -193,7 +203,11 @@ export const LiveQuoter: React.FC = () => {
       setPieceName(filename.replace(/\.[^/.]+$/, ''));
       showToast(`¡Parámetros leídos de ${result.slicerName}!`);
     } else {
-      showToast('Archivo leído, pero no se hallaron etiquetas estándar de tiempo/peso.');
+      if (filename.toLowerCase().endsWith('.3mf')) {
+        showToast('Los archivos .3MF son paquetes ZIP binarios de proyecto. Para cotización automática precisa, exporta como .GCODE desde tu laminador.', 'warning');
+      } else {
+        showToast('Archivo leído, pero no se hallaron etiquetas estándar de tiempo/peso.');
+      }
     }
   };
 
@@ -364,7 +378,7 @@ _Cotización generada con Slice2Price_`;
                 {detectedSlicer ? (
                   <span className="color-secondary">Archivo procesado: {detectedSlicer}</span>
                 ) : (
-                  'Arrastra aquí tu G-Code o .3MF (Orca, Bambu, Cura, Prusa)'
+                  'Arrastra aquí tu G-Code (Orca, Bambu, Cura, Prusa, Creality)'
                 )}
               </div>
               <div className="text-body-sm color-outline">
@@ -750,10 +764,11 @@ _Cotización generada con Slice2Price_`;
             </span>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {[
-                { label: '$600 Estrato 1-2', price: 600 },
+                { label: '$350 Estrato 1', price: 350 },
+                { label: '$440 Estrato 2', price: 440 },
                 { label: '$750 Estrato 3', price: 750 },
                 { label: '$880 Estrato 4 / Base', price: 880 },
-                { label: '$980 Comercial / Taller', price: 980 },
+                { label: '$1.056 Comercial (+20%)', price: 1056 },
                 { label: '$1.080 Estrato 5-6', price: 1080 },
                 { label: '$1.200 Costa Caribe', price: 1200 },
               ].map((chip) => (

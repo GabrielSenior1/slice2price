@@ -39,22 +39,24 @@ export class OrcaSlicerParser implements SlicerParser {
     }
 
     let printTimeHours = 0;
-    const timeMatch = sample.match(/estimated printing time[^\r\n=]*=\s*([^\r\n;]+)/i);
+    // Soporta tanto OrcaSlicer (=) como Bambu Studio (: o =)
+    const timeMatch = sample.match(/(?:total )?estimated (?:printing )?time[^\r\n:=]*[:=]\s*([^\r\n;]+)/i);
     if (timeMatch && timeMatch[1]) {
       printTimeHours = parseTimeString(timeMatch[1]);
     } else {
-      const modelTimeMatch = sample.match(/model printing time[^\r\n=]*=\s*([^\r\n;]+)/i);
+      const modelTimeMatch = sample.match(/(?:total )?model (?:printing )?time[^\r\n:=]*[:=]\s*([^\r\n;]+)/i);
       if (modelTimeMatch && modelTimeMatch[1]) {
         printTimeHours = parseTimeString(modelTimeMatch[1]);
       }
     }
 
     let filamentGrams = 0;
-    const gramsMatch = sample.match(/(?:total )?filament used \[g\]\s*=\s*([0-9.]+)/i);
+    // Soporta tanto OrcaSlicer (filament used [g] =) como Bambu Studio (total filament weight [g] :)
+    const gramsMatch = sample.match(/(?:total )?filament (?:used|weight) \[g\]\s*[:=]\s*([0-9.]+)/i);
     if (gramsMatch && gramsMatch[1]) {
       filamentGrams = parseFloat(gramsMatch[1]);
     } else {
-      const mmMatch = sample.match(/(?:total )?filament used \[mm\]\s*=\s*([0-9.]+)/i);
+      const mmMatch = sample.match(/(?:total )?filament (?:used|length) \[mm\]\s*[:=]\s*([0-9.]+)/i);
       if (mmMatch && mmMatch[1]) {
         filamentGrams = filamentLengthToGrams(parseFloat(mmMatch[1]), 1.24);
       }

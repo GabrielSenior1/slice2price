@@ -135,6 +135,18 @@ npx vitest run --coverage
 | Artillery Sidewinder X2 | 350 | $500 |
 | Anycubic Kobra 3 | 150 | $350 |
 
+## Tarifas de Electricidad (CREG Colombia)
+
+| Perfil | Tarifa ($/kWh) | Margen Error | Riesgo Fallo |
+|---|---|---|---|
+| Residencial — Estrato 1 (Subsidio CREG) | $350 | 5% | 3% |
+| Residencial — Estrato 2 (Subsidio CREG) | $440 | 5% | 3% |
+| Residencial — Estrato 3 | $750 | 5% | 3% |
+| Nacional Base — Estrato 4 | $880 | 5% | 3% |
+| Comercial / Taller (+20% sobretasa) | $1.056 | 6% | 4% |
+| Residencial — Estrato 5-6 | $1.080 | 5% | 3% |
+| Costa Caribe (Afinia / Air-e) | $1.200 | 8% | 5% |
+
 > Todos los valores son editables desde la gestión de perfiles.
 
 ## Licencia
