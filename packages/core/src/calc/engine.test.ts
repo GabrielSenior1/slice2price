@@ -363,4 +363,82 @@ describe('paramsFromProfiles', () => {
       expect(resX35.profitMultiplier).toBe(3.5);
     });
   });
+
+  // --------------------------------------------------------------------------
+  // Vectores de prueba de flujos críticos (Casos exactos A, B y C del usuario)
+  // --------------------------------------------------------------------------
+  describe('Vectores de prueba de flujos críticos solicitados', () => {
+    it('Caso A: Base del README -> $16.827,71', () => {
+      const resA = calculateCost(baseParams, basePiece);
+      expect(resA.totalAllUnits).toBeCloseTo(16827.7074, 2);
+      expect(Math.round(resA.totalAllUnits * 100) / 100).toBe(16827.71);
+    });
+
+    it('Caso B: Dificultad 10% -> $18.510,48', () => {
+      const paramsB: CalcParams = {
+        ...baseParams,
+        difficultyPercent: 10,
+      };
+      const resB = calculateCost(paramsB, basePiece);
+      expect(resB.difficultyAmount).toBeCloseTo(11114 * 0.10, 2);
+      expect(resB.totalAllUnits).toBeCloseTo(18510.478, 2);
+      expect(Math.round(resB.totalAllUnits * 100) / 100).toBe(18510.48);
+    });
+
+    it('Caso C: Descuento 10%, cantidad 3 -> $45.434,81', () => {
+      const paramsC: CalcParams = {
+        ...baseParams,
+        discount: 10,
+      };
+      const pieceC: PieceInput = {
+        ...basePiece,
+        quantity: 3,
+      };
+      const resC = calculateCost(paramsC, pieceC);
+      expect(resC.totalPerUnit).toBeCloseTo(15144.93666, 2);
+      expect(resC.totalAllUnits).toBeCloseTo(45434.80998, 2);
+      expect(Math.round(resC.totalAllUnits * 100) / 100).toBe(45434.81);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Casos de borde exhaustivos (Flujo 3)
+  // --------------------------------------------------------------------------
+  describe('Casos de borde y robustez numérica (Flujo 3)', () => {
+    it('filamento 0g (solo tiempo y máquina)', () => {
+      const pieceZeroGrams: PieceInput = { ...basePiece, filamentGrams: 0 };
+      const res = calculateCost(baseParams, pieceZeroGrams);
+      expect(res.filamentCost).toBe(0);
+      expect(res.subtotal).toBeGreaterThan(0);
+      expect(res.totalAllUnits).toBeGreaterThan(0);
+      expect(Number.isNaN(res.totalAllUnits)).toBe(false);
+    });
+
+    it('tiempo 0h (solo costo de material y extras)', () => {
+      const pieceZeroHours: PieceInput = { ...basePiece, printTimeHours: 0 };
+      const res = calculateCost(baseParams, pieceZeroHours);
+      expect(res.energyCost).toBe(0);
+      expect(res.depreciationCost).toBe(0);
+      expect(res.filamentCost).toBe(3250);
+      expect(res.totalAllUnits).toBeGreaterThan(0);
+      expect(Number.isNaN(res.totalAllUnits)).toBe(false);
+    });
+
+    it('descuento 100% (gratis o cortesía)', () => {
+      const params100Disc: CalcParams = { ...baseParams, discount: 100 };
+      const res = calculateCost(params100Disc, basePiece);
+      expect(res.discountPercent).toBe(100);
+      expect(res.totalPerUnit).toBe(0);
+      expect(res.totalAllUnits).toBe(0);
+    });
+
+    it('rechaza cantidad 0 con excepción controlada', () => {
+      expect(() => calculateCost(baseParams, { ...basePiece, quantity: 0 })).toThrow('La cantidad debe ser al menos 1');
+    });
+
+    it('rechaza tiempo o filamento negativo con excepción controlada', () => {
+      expect(() => calculateCost(baseParams, { ...basePiece, printTimeHours: -0.5 })).toThrow('El tiempo de impresión no puede ser negativo');
+      expect(() => calculateCost(baseParams, { ...basePiece, filamentGrams: -10 })).toThrow('Los gramos de filamento no pueden ser negativos');
+    });
+  });
 });

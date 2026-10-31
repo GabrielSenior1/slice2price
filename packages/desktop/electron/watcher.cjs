@@ -95,6 +95,7 @@ class SlicerWatcher {
     this.watchers = new Map();
     this.watchedPaths = new Set();
     this.debounceTimers = new Map();
+    this.processedFiles = new Map();
     this.onEventCallback = null;
     this.mainWindow = null;
     this.enabled = true;
@@ -121,23 +122,71 @@ class SlicerWatcher {
   }
 
   /**
-   * Lee de forma segura los primeros 1.5MB de un archivo para no saturar memoria
+   * Espera a que el archivo termine de escribirse verificando que el tamaño
+   * permanezca estable entre lecturas consecutivas.
    */
-  readFileHeader(filePath, maxBytes = 1.5 * 1024 * 1024) {
+  async waitForFileStable(filePath, maxAttempts = 6, intervalMs = 250) {
+    let lastSize = -1;
+    let attempts = 0;
+
+    while (attempts < maxAttempts) {
+      if (!fs.existsSync(filePath)) return false;
+      try {
+        const stats = fs.statSync(filePath);
+        if (stats.size > 0 && stats.size === lastSize) {
+          return true;
+        }
+        lastSize = stats.size;
+      } catch (e) {
+        // En caso de bloqueo temporal por el proceso del slicer
+      }
+      await new Promise((r) => setTimeout(r, intervalMs));
+      attempts++;
+    }
+    return fs.existsSync(filePath);
+  }
+
+  /**
+   * Lee de forma segura la cabecera (1 MB) y el pie (256 KB) del archivo.
+   * Esto garantiza capturar metadatos tanto de slicers que escriben al inicio (Cura, Orca, Bambu)
+   * como de slicers que escriben al final (PrusaSlicer, SuperSlicer) en archivos grandes (>5MB).
+   */
+  readFileHeaderAndFooter(filePath, headerBytes = 1024 * 1024, footerBytes = 256 * 1024) {
     try {
       const stats = fs.statSync(filePath);
       if (stats.isDirectory() || stats.size === 0) return null;
 
-      const bytesToRead = Math.min(stats.size, maxBytes);
-      const buffer = Buffer.alloc(bytesToRead);
+      const totalSize = stats.size;
       const fd = fs.openSync(filePath, 'r');
-      fs.readSync(fd, buffer, 0, bytesToRead, 0);
+
+      if (totalSize <= headerBytes + footerBytes) {
+        const buffer = Buffer.alloc(totalSize);
+        fs.readSync(fd, buffer, 0, totalSize, 0);
+        fs.closeSync(fd);
+        return buffer.toString('utf-8');
+      }
+
+      // Leer cabecera (inicio)
+      const headerBuf = Buffer.alloc(headerBytes);
+      fs.readSync(fd, headerBuf, 0, headerBytes, 0);
+
+      // Leer pie (final)
+      const footerBuf = Buffer.alloc(footerBytes);
+      const footerOffset = totalSize - footerBytes;
+      fs.readSync(fd, footerBuf, 0, footerBytes, footerOffset);
       fs.closeSync(fd);
 
-      return buffer.toString('utf-8');
+      return headerBuf.toString('utf-8') + '\n; ... [SLICE2PRICE_OMITTED_MIDDLE] ...\n' + footerBuf.toString('utf-8');
     } catch (e) {
       return null;
     }
+  }
+
+  /**
+   * Alias de compatibilidad
+   */
+  readFileHeader(filePath) {
+    return this.readFileHeaderAndFooter(filePath);
   }
 
   async processFile(filePath) {
@@ -154,8 +203,27 @@ class SlicerWatcher {
       return;
     }
 
+    // Esperar estabilidad de escritura
+    const isStable = await this.waitForFileStable(filePath);
+    if (!isStable) return;
+
     try {
-      const content = this.readFileHeader(filePath);
+      const stats = fs.statSync(filePath);
+      const fileKey = `${filePath}:${stats.size}:${Math.floor(stats.mtimeMs)}`;
+
+      // Deduplicar eventos consecutivos del mismo archivo sin cambios
+      if (this.processedFiles.get(filePath) === fileKey) {
+        return;
+      }
+      this.processedFiles.set(filePath, fileKey);
+
+      // Limitar memoria de mapa de deduplicación
+      if (this.processedFiles.size > 200) {
+        const oldest = this.processedFiles.keys().next().value;
+        this.processedFiles.delete(oldest);
+      }
+
+      const content = this.readFileHeaderAndFooter(filePath);
       if (!content) return;
 
       const { parseSlicerFile } = await getCore();

@@ -35,7 +35,7 @@ export const DEFAULT_PRINTERS: PrinterProfile[] = [
     name: 'Creality Ender 3 Pro',
     model: 'Ender 3 Pro',
     powerConsumptionW: 270,
-    depreciationPerHour: 300,
+    depreciationPerHour: 500,
     createdAt: NOW,
     updatedAt: NOW,
   },

@@ -197,16 +197,40 @@ export const LiveQuoter: React.FC = () => {
     }
   };
 
+  const readFileSmart = (file: File, callback: (text: string) => void) => {
+    const totalSize = file.size;
+    const headerBytes = 1024 * 1024;
+    const footerBytes = 256 * 1024;
+
+    if (totalSize <= headerBytes + footerBytes) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const text = e.target?.result as string;
+        if (text) callback(text);
+      };
+      reader.readAsText(file);
+    } else {
+      const headerBlob = file.slice(0, headerBytes);
+      const footerBlob = file.slice(totalSize - footerBytes);
+
+      const headerReader = new FileReader();
+      headerReader.onload = (hEvent) => {
+        const headerText = hEvent.target?.result as string;
+        const footerReader = new FileReader();
+        footerReader.onload = (fEvent) => {
+          const footerText = fEvent.target?.result as string;
+          callback((headerText || '') + '\n; ... [SLICE2PRICE_OMITTED_MIDDLE] ...\n' + (footerText || ''));
+        };
+        footerReader.readAsText(footerBlob);
+      };
+      headerReader.readAsText(headerBlob);
+    }
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      if (text) processSlicerContent(text, file.name);
-    };
-    // Leer los primeros 1MB que es donde están los encabezados y resúmenes
-    reader.readAsText(file.slice(0, 1024 * 1024));
+    readFileSmart(file, (text) => processSlicerContent(text, file.name));
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -214,12 +238,7 @@ export const LiveQuoter: React.FC = () => {
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      if (text) processSlicerContent(text, file.name);
-    };
-    reader.readAsText(file.slice(0, 1024 * 1024));
+    readFileSmart(file, (text) => processSlicerContent(text, file.name));
   };
 
   // Copiar resumen de cotización al portapapeles

@@ -31,16 +31,30 @@ Slice2Price/
   - **Notificaciones nativas:** Alertas visuales del sistema en Windows al detectar un archivo laminado.
   - **Plugins dedicados:** Integración directa para Cura (`plugins/cura/`), PrusaSlicer (`plugins/prusa/`) y OrcaSlicer/Bambu Studio (`plugins/orca_bambu/`).
 
-### Fórmulas
+### Fórmulas Completas del Motor de Cálculo
+
+El cálculo se realiza en cascada respetando estrictamente el orden de aplicación de factores:
 
 ```
-costo_filamento = (gramos / 1000) × precio_kg
-costo_energia   = (consumo_W / 1000) × horas × precio_kwh
-costo_desgaste  = horas × depreciación_por_hora
-subtotal        = costo_filamento + costo_energia + costo_desgaste + insumos_extra
-con_error       = subtotal × (1 + margen_error/100) × (1 + riesgo_fallo/100)
-total           = con_error × (1 + margen_ganancia/100)
+costo_filamento   = (gramos / 1000) × precio_kg
+costo_energia     = (consumo_W / 1000) × horas × precio_kwh
+costo_desgaste    = horas × depreciación_por_hora
+subtotal_base     = costo_filamento + costo_energia + costo_desgaste + insumos_extra
+con_dificultad    = subtotal_base × (1 + dificultad/100)
+con_riesgo        = con_dificultad × (1 + margen_error/100) × (1 + riesgo_fallo/100)
+antes_descuento   = con_riesgo × (1 + margen_ganancia/100)
+total_unidad      = antes_descuento × (1 - descuento/100)
+total_pedido      = total_unidad × cantidad
 ```
+
+- **Multiplicador Comercial Equivalente:** $\text{Multiplicador} = 1 + \frac{\text{margen\_ganancia}}{100}$ (ej. 100% ganancia = ×2.0, 150% = ×2.5, 200% = ×3.0).
+- **Consistencia:** 0 horas, 0 gramos, o 100% de descuento se calculan limpiamente sin generar `NaN` ni valores negativos.
+
+### Mini Overlay Flotante Always-on-Top
+
+- **Alternar ventana:** Presiona **`F10`** o haz clic en el botón **`Modo Flotante`** (barra superior o cotizador) para alternar entre la ventana completa (1280×820) y el mini-widget compacto (380×260).
+- **Copiar cotización:** Haz clic en el botón **`Copiar`** (icono `content_copy`) para copiar el texto formateado al portapapeles y pegarlo directamente en WhatsApp o correo.
+- **Actualización reactiva:** El overlay emite un pulso luminoso verde y actualiza el precio en vivo al detectar un nuevo archivo G-code en cualquiera de tus slicers.
 
 ### Requisitos
 
@@ -98,12 +112,20 @@ npx vitest run --coverage
 | + Ganancia 40% | 12.019,79 × 0,40 | +$4.807,92 |
 | **TOTAL** | | **$16.827,71** |
 
+### Vectores de Prueba Verificados del Motor
+
+| Caso | Entrada Adicional | Total Esperado | Estado en Tests |
+|---|---|---|:---:|
+| **Caso A** | Base del ejemplo (PLA 65k, 270W, $500/h, $800/kWh, Error 5%, Fallo 3%, Ganancia 40%, 4h, 50g, Extras $5k) | **$16.827,71** | ✅ 100% Verificado |
+| **Caso B** | Dificultad geométrica +10% | **$18.510,48** | ✅ 100% Verificado |
+| **Caso C** | Descuento cliente 10%, Cantidad 3 unidades | **$45.434,81** | ✅ 100% Verificado |
+
 ## Impresoras incluidas por defecto
 
 | Impresora | Consumo (W) | Depreciación (COP/h) |
 |---|---|---|
 | FlashForge Creator 5 | 400 | $1.300 |
-| Creality Ender 3 Pro | 270 | $300 |
+| Creality Ender 3 Pro | 270 | $500 |
 | Bambu Lab A1 Mini | 120 | $350 |
 | Bambu Lab A1 | 150 | $450 |
 | Bambu Lab P1S | 220 | $900 |

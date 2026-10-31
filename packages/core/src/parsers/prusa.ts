@@ -11,9 +11,7 @@ export class PrusaParser implements SlicerParser {
   }
 
   parse(content: string, filename?: string): SliceResult | null {
-    const header = content.slice(0, 150000);
-    const trailer = content.length > 200000 ? content.slice(-50000) : '';
-    const sample = header + '\n' + trailer;
+    const sample = content.length > 400000 ? content.slice(0, 200000) + '\n' + content.slice(-200000) : content;
 
     let printTimeHours = 0;
     const timeMatch = sample.match(/estimated printing time[^\r\n=]*=\s*([^\r\n;]+)/i);

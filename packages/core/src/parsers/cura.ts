@@ -10,7 +10,7 @@ export class CuraParser implements SlicerParser {
   }
 
   parse(content: string, filename?: string): SliceResult | null {
-    const sample = content.slice(0, 150000);
+    const sample = content.length > 200000 ? content.slice(0, 100000) + '\n' + content.slice(-50000) : content;
 
     let printTimeHours = 0;
     const timeMatch = sample.match(/;TIME:(\d+)/i);
@@ -19,11 +19,16 @@ export class CuraParser implements SlicerParser {
     }
 
     let filamentGrams = 0;
-    const filMatch = sample.match(/;Filament used:\s*([0-9.]+)\s*(m|mm)/i);
-    if (filMatch && filMatch[1]) {
-      const val = parseFloat(filMatch[1]);
-      const lengthMm = filMatch[2].toLowerCase() === 'm' ? val * 1000 : val;
-      filamentGrams = filamentLengthToGrams(lengthMm, 1.24);
+    const filGramsMatch = sample.match(/;Filament used:\s*([0-9.]+)\s*g/i) || sample.match(/;filament used \[g\]\s*=\s*([0-9.]+)/i);
+    if (filGramsMatch && filGramsMatch[1]) {
+      filamentGrams = parseFloat(filGramsMatch[1]);
+    } else {
+      const filMatch = sample.match(/;Filament used:\s*([0-9.]+)\s*(m|mm)/i);
+      if (filMatch && filMatch[1]) {
+        const val = parseFloat(filMatch[1]);
+        const lengthMm = filMatch[2].toLowerCase() === 'm' ? val * 1000 : val;
+        filamentGrams = filamentLengthToGrams(lengthMm, 1.24);
+      }
     }
 
     if (printTimeHours <= 0 && filamentGrams <= 0) {
